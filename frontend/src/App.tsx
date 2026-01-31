@@ -17,17 +17,20 @@ function AppContent() {
   const dispatch = useDispatch<AppDispatch>();
   const [showForm, setShowForm] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
-  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated, user, role } = useSelector((state: RootState) => state.auth);
   const [currentPage, setCurrentPage] = useState<'login' | 'register'>('login');
 
   useEffect(() => {
     if (isAuthenticated) {
       const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      const socket = io(API_BASE_URL);
+      const socket = io(API_BASE_URL, {
+        transports: ['websocket', 'polling'],
+        withCredentials: true
+      });
 
       socket.on('connect', () => {
         console.log('🔌 Connected to Socket.io');
-        if (user === 'admin') {
+        if (role === 'admin') {
           console.log('👑 Joining admin room...');
           socket.emit('join-admin');
         }

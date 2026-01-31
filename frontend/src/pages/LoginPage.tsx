@@ -20,7 +20,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onNavigate
     setError(null);
     try {
       const response = await authApi.login(data);
-      dispatch(setCredentials({ user: data.username, token: response.accessToken }));
+      dispatch(setCredentials({ 
+        user: data.username, 
+        token: response.accessToken,
+        role: response.role 
+      }));
       onLoginSuccess();
     } catch (err: any) {
       setError(err.response?.data || 'Login failed');
@@ -36,7 +40,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onNavigate
       const response = await authApi.googleLogin(credentialResponse.credential);
       // For Google login, we use the email as the username
       const decodedToken = JSON.parse(atob(credentialResponse.credential.split('.')[1]));
-      dispatch(setCredentials({ user: decodedToken.email, token: response.accessToken }));
+      dispatch(setCredentials({ 
+        user: decodedToken.email, 
+        token: response.accessToken,
+        role: response.role 
+      }));
       onLoginSuccess();
     } catch (err: any) {
       setError(err.response?.data || 'Google Login failed');
