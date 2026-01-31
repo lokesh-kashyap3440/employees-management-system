@@ -3,7 +3,15 @@ import type { Employee, CreateEmployeeRequest, UpdateEmployeeRequest } from '../
 import type { LoginRequest, RegisterRequest, AuthResponse } from '../types/auth';
 
 const envUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const API_BASE_URL = envUrl.startsWith('http') ? envUrl : `https://${envUrl}`;
+let apiUrl = envUrl.startsWith('http') ? envUrl : `https://${envUrl}`;
+
+// Auto-fix for Render: if the URL looks like an internal service name (no dots, not localhost), append .onrender.com
+if (!apiUrl.includes('localhost') && !apiUrl.match(/\.[a-z]+$/)) {
+  console.warn(`Detected incomplete API URL '${apiUrl}'. Appending .onrender.com`);
+  apiUrl = `${apiUrl}.onrender.com`;
+}
+
+const API_BASE_URL = apiUrl;
 
 console.log('API_BASE_URL:', API_BASE_URL); // Debug log
 
