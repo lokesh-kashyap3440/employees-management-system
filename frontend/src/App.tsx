@@ -12,6 +12,7 @@ import { Toaster, toast } from 'react-hot-toast';
 import { AnimatePresence } from 'framer-motion';
 import { io } from 'socket.io-client';
 import { addNotification } from './store/notificationSlice';
+import { API_BASE_URL } from './services/api';
 
 function AppContent() {
   const dispatch = useDispatch<AppDispatch>();
@@ -22,7 +23,6 @@ function AppContent() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
       const socket = io(API_BASE_URL, {
         transports: ['websocket', 'polling'],
         withCredentials: true

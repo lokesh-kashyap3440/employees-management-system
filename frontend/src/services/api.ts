@@ -11,7 +11,7 @@ if (!apiUrl.includes('localhost') && !apiUrl.match(/\.[a-z]+$/)) {
   apiUrl = `${apiUrl}.onrender.com`;
 }
 
-const API_BASE_URL = apiUrl;
+export const API_BASE_URL = apiUrl;
 
 console.log('API_BASE_URL:', API_BASE_URL); // Debug log
 
