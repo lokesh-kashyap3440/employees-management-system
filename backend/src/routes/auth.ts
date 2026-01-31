@@ -54,9 +54,15 @@ router.post('/google', async (req: Request, res: Response) => {
       return res.status(400).send('ID Token is required');
     }
 
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      console.error('GOOGLE_CLIENT_ID environment variable is not set');
+      return res.status(500).send('Server configuration error');
+    }
+
     const ticket = await googleClient.verifyIdToken({
       idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: clientId,
     });
 
     const payload = ticket.getPayload();
@@ -84,9 +90,9 @@ router.post('/google', async (req: Request, res: Response) => {
     );
 
     res.json({ accessToken, role: user.role || 'user' });
-  } catch (error) {
-    console.error('Error with Google login:', error);
-    res.status(400).send('Invalid Google token');
+  } catch (error: any) {
+    console.error('Error with Google login:', error.message);
+    res.status(400).send(`Invalid Google token: ${error.message}`);
   }
 });
 
