@@ -22,7 +22,7 @@ services:
   - type: web
     name: ems-frontend
     env: static
-    plan: free
+    plan: static_free
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
