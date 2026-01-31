@@ -34,10 +34,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onNavigate
   };
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
+    console.log('Google Login Success:', credentialResponse); // Debug log
     setIsLoading(true);
     setError(null);
     try {
+      console.log('Sending Google credential to backend...'); // Debug log
       const response = await authApi.googleLogin(credentialResponse.credential);
+      console.log('Backend response:', response); // Debug log
+      
       // For Google login, we use the email as the username
       const decodedToken = JSON.parse(atob(credentialResponse.credential.split('.')[1]));
       dispatch(setCredentials({ 
@@ -47,6 +51,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onNavigate
       }));
       onLoginSuccess();
     } catch (err: any) {
+      console.error('Google Login Error:', err); // Debug log
       setError(err.response?.data || 'Google Login failed');
     } finally {
       setIsLoading(false);
@@ -74,7 +79,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onNavigate
         <div className="flex justify-center">
           <GoogleLogin
             onSuccess={handleGoogleSuccess}
-            onError={() => setError('Google Login Failed')}
+            onError={() => {
+              console.error('Google Login Component Error'); // Debug log
+              setError('Google Login Failed');
+            }}
             useOneTap
             theme="filled_blue"
             shape="pill"

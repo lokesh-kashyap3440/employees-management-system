@@ -5,6 +5,8 @@ import type { LoginRequest, RegisterRequest, AuthResponse } from '../types/auth'
 const envUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const API_BASE_URL = envUrl.startsWith('http') ? envUrl : `https://${envUrl}`;
 
+console.log('API_BASE_URL:', API_BASE_URL); // Debug log
+
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
