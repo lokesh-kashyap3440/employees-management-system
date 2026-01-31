@@ -2,7 +2,8 @@ import axios from 'axios';
 import type { Employee, CreateEmployeeRequest, UpdateEmployeeRequest } from '../types/employee';
 import type { LoginRequest, RegisterRequest, AuthResponse } from '../types/auth';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const envUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_BASE_URL = envUrl.startsWith('http') ? envUrl : `https://${envUrl}`;
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
