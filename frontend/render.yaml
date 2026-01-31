@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: ems-web
+    env: static
+    buildCommand: npm install && npm run build
+    publishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://your-api-url.onrender.com # Update this after backend is deployed

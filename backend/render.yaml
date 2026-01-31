@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: ems-api
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PORT
+        value: 3000
+      - key: SERVER_URL
+        sync: false

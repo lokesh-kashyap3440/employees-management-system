@@ -1,0 +1,37 @@
+services:
+  # Backend Service
+  - type: web
+    name: ems-backend
+    env: node
+    region: ohio # or your preferred region
+    plan: free # or starter/standard
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: GOOGLE_CLIENT_ID
+        sync: false # User must enter this in Render Dashboard
+      - key: MONGODB_URI
+        sync: false # User must enter this in Render Dashboard
+      - key: JWT_SECRET
+        generateValue: true
+
+  # Frontend Static Site
+  - type: web
+    name: ems-frontend
+    env: static
+    region: ohio
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_GOOGLE_CLIENT_ID
+        sync: false # User must enter this in Render Dashboard
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: ems-backend
+          property: host
