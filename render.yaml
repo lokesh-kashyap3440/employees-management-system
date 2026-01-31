@@ -22,7 +22,6 @@ services:
   - type: web
     name: ems-frontend
     env: static
-    region: ohio
     plan: free
     rootDir: frontend
     buildCommand: npm install && npm run build
