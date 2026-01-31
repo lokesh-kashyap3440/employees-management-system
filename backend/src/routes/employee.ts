@@ -88,10 +88,21 @@ const collectionName = 'employees';
  */
 router.post('/', authenticateToken as any, async (req: AuthRequest, res: Response) => {
   try {
-    const employee: Employee = req.body;
-    employee.createdBy = req.user?.username;
-    employee.createdAt = new Date();
-    employee.updatedAt = new Date();
+    const { name, position, department, salary } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+
+    const employee: Employee = {
+      name,
+      position,
+      department,
+      salary: salary ? Number(salary) : undefined,
+      createdBy: req.user?.username,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
     
     const result = await getDb()
       .collection(collectionName)

@@ -11,6 +11,7 @@ const mockFindOne = jest.fn();
 const mockUpdateOne = jest.fn();
 const mockDeleteOne = jest.fn();
 const mockToArray = jest.fn();
+const mockSort = jest.fn();
 
 // Setup mock return values
 mockGetDb.mockReturnValue({
@@ -24,8 +25,11 @@ mockCollection.mockReturnValue({
   updateOne: mockUpdateOne,
   deleteOne: mockDeleteOne,
 });
-mockFind.mockReturnValue({
+mockSort.mockReturnValue({
   toArray: mockToArray,
+});
+mockFind.mockReturnValue({
+  sort: mockSort,
 });
 
 // Use unstable_mockModule for ESM
@@ -50,6 +54,9 @@ const { default: app } = await import('../app.ts');
 describe('Employee Routes (Role: User)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockSort.mockReturnValue({ toArray: mockToArray });
+    mockFind.mockReturnValue({ sort: mockSort });
+
     mockGetDb.mockReturnValue({
         collection: () => ({
             insertOne: mockInsertOne,
@@ -59,8 +66,6 @@ describe('Employee Routes (Role: User)', () => {
             deleteOne: mockDeleteOne,
         })
     });
-    // Reset find to return the mock with toArray
-    mockFind.mockReturnValue({ toArray: mockToArray });
   });
 
   describe('GET /employees', () => {
