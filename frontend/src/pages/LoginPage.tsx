@@ -58,6 +58,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onNavigate
     }
   };
 
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
   return (
     <AuthForm
       title="Login"
@@ -66,6 +69,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onNavigate
       error={error}
       buttonText="Sign In"
     >
+      {error && (
+        <div className="mt-2 p-2 bg-gray-100 rounded text-xs font-mono text-gray-600 break-all">
+          <p><strong>Debug Info:</strong></p>
+          <p>API: {API_URL}</p>
+          <p>Client ID: {CLIENT_ID ? 'Set ✅' : 'Missing ❌'}</p>
+        </div>
+      )}
       <div className="flex flex-col gap-4 mt-4">
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
