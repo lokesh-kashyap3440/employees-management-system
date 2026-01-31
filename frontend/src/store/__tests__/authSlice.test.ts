@@ -4,6 +4,7 @@ import { describe, it, expect } from 'vitest';
 describe('authSlice', () => {
   const initialState = {
     user: null,
+    role: null,
     token: null,
     isAuthenticated: false,
   };
@@ -15,16 +16,18 @@ describe('authSlice', () => {
   it('should handle setCredentials', () => {
     const actual = authReducer(
       initialState,
-      setCredentials({ user: 'testuser', token: 'token123' })
+      setCredentials({ user: 'testuser', token: 'token123', role: 'user' })
     );
     expect(actual.user).toEqual('testuser');
     expect(actual.token).toEqual('token123');
+    expect(actual.role).toEqual('user');
     expect(actual.isAuthenticated).toEqual(true);
   });
 
   it('should handle logout', () => {
     const loggedInState = {
       user: 'testuser',
+      role: 'user',
       token: 'token123',
       isAuthenticated: true,
     };
