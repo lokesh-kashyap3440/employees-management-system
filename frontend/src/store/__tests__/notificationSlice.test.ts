@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { configureStore } from '@reduxjs/toolkit';
 import notificationReducer, {
   addNotification,
@@ -6,7 +6,6 @@ import notificationReducer, {
   clearNotifications,
   fetchNotifications,
   clearPersistentNotifications,
-  NotificationState
 } from '../notificationSlice';
 import { notificationApi } from '../../services/api';
 

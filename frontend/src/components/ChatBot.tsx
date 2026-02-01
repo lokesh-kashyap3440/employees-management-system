@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send, User, Bot, Briefcase, Building2, DollarSign } from 'lucide-react';
+import { MessageCircle, X, Send, User, Bot, Briefcase, Building2 } from 'lucide-react';
 import { chatbotApi } from '../services/api';
 import type { Employee } from '../types/employee';
 
