@@ -6,15 +6,6 @@ import type { AuthRequest } from '../middleware/auth.ts';
 
 const router = Router();
 
-/**
- * @swagger
- * /chatbot/query:
- *   post:
- *     summary: Query employees using an LLM (Ollama or Cloud)
- *     tags: [Chatbot]
- *     security:
- *       - bearerAuth: []
- */
 router.post('/query', authenticateToken as any, async (req: AuthRequest, res: Response) => {
   const { query } = req.body;
   if (!query) return res.status(400).json({ error: 'Query is required' });
@@ -35,26 +26,33 @@ router.post('/query', authenticateToken as any, async (req: AuthRequest, res: Re
     const apiUrl = process.env.LLM_API_URL || 'http://localhost:11434/v1/chat/completions';
     const model = process.env.LLM_MODEL || 'qwen2.5-coder:3b';
 
-    const systemPrompt = `
-      You are a Secure HR Assistant. Answer queries based ONLY on the provided employee data.
-      
-      DATA (JSON):
-      ${JSON.stringify(employees)}
+    // Simplified data format for easier LLM parsing
+    const employeeContext = employees.map(e => 
+        `ID: ${e._id.toString()} | Name: ${e.name} | Salary: ${e.salary} | Dept: ${e.department} | Role: ${e.position}`
+    ).join('\n');
 
-      RESPONSE FORMAT:
-      You MUST respond with a valid JSON object only. No preamble or explanation.
-      Format:
+    const systemPrompt = `
+      You are a Secure HR Assistant. You have access to the following employee records:
+      
+      ${employeeContext}
+
+      TASK:
+      Answer the user's query using the data above.
+      
+      RESPONSE FORMAT (MUST BE VALID JSON):
       {
-        "message": "A professional text summary of the answer.",
-        "matching_employee_ids": ["array of _id strings for employees that match the query"]
+        "message": "Your text answer here.",
+        "matching_employee_ids": ["id1", "id2"]
       }
 
       RULES:
-      1. If the query asks for "Who earns > 100k", include ONLY those IDs.
-      2. If nobody matches, return an empty array for matching_employee_ids.
-      3. Perform calculations if needed (averages, totals).
-      4. Today's date is ${new Date().toLocaleDateString()}.
+      1. Return ONLY the JSON object. No markdown, no commentary.
+      2. If the user asks for specific filters (salary, dept), include ONLY matching IDs in matching_employee_ids.
+      3. If the query is a general question (e.g. average salary), matching_employee_ids can be empty unless they specifically ask "who".
+      4. Current Date: ${new Date().toLocaleDateString()}
     `;
+
+    console.log('🤖 Sending query to LLM:', query);
 
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -69,8 +67,7 @@ router.post('/query', authenticateToken as any, async (req: AuthRequest, res: Re
           { role: 'user', content: query }
         ],
         stream: false,
-        temperature: 0.1,
-        response_format: { type: "json_object" }
+        temperature: 0.1
       })
     });
 
@@ -80,28 +77,41 @@ router.post('/query', authenticateToken as any, async (req: AuthRequest, res: Re
     }
 
     const data = await response.json();
-    let content = data.choices?.[0]?.message?.content || "{}";
+    let rawContent = data.choices?.[0]?.message?.content || "{}";
     
-    // Some models might wrap JSON in markdown blocks
-    if (content.includes('```json')) {
-        content = content.split('```json')[1].split('```')[0].trim();
-    } else if (content.includes('```')) {
-        content = content.split('```')[1].split('```')[0].trim();
+    console.log('📄 Raw LLM Response:', rawContent);
+
+    // Robust JSON extraction
+    let jsonContent = rawContent;
+    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+        jsonContent = jsonMatch[0];
     }
 
-    const result = JSON.parse(content);
-    const botMessage = result.message || "I couldn't process that.";
-    const matchingIds = result.matching_employee_ids || [];
+    try {
+        const result = JSON.parse(jsonContent);
+        const botMessage = result.message || "I found some results for you.";
+        const matchingIds = Array.isArray(result.matching_employee_ids) ? result.matching_employee_ids : [];
 
-    // Filter original employees list to only those the LLM identified
-    const filteredEmployees = employees.filter(emp => 
-        matchingIds.includes(emp._id.toString())
-    );
+        // Filter original employees list to only those the LLM identified
+        const filteredEmployees = employees.filter(emp => 
+            matchingIds.includes(emp._id.toString())
+        );
 
-    res.json({ 
-      results: filteredEmployees, 
-      message: botMessage 
-    });
+        console.log(`✅ Filtered to ${filteredEmployees.length} employees`);
+
+        res.json({
+          results: filteredEmployees, 
+          message: botMessage 
+        });
+    } catch (parseError) {
+        console.error('❌ Failed to parse LLM JSON:', jsonContent);
+        // Fallback for non-JSON response
+        res.json({
+            results: [],
+            message: rawContent
+        });
+    }
 
   } catch (error: any) {
     console.error('LLM Chatbot error:', error.message);

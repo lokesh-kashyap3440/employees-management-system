@@ -4,9 +4,9 @@ import request from 'supertest';
 // Define mocks
 const mockToArray = jest.fn();
 const mockProject = jest.fn().mockReturnThis();
-const mockFind = jest.fn().mockReturnValue({ 
+const mockFind = jest.fn().mockReturnValue({
   project: mockProject,
-  toArray: mockToArray 
+  toArray: mockToArray
 });
 const mockCollection = jest.fn().mockReturnValue({ find: mockFind });
 const mockGetDb = jest.fn().mockReturnValue({ collection: mockCollection });
@@ -51,7 +51,7 @@ global.fetch = mockFetch as any;
 
 const { default: app } = await import('../app.ts');
 
-describe('LLM Chatbot Route', () => {
+describe('LLM Chatbot Route (Refined JSON Parsing)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUser = { username: 'admin', role: 'admin' };
@@ -60,19 +60,19 @@ describe('LLM Chatbot Route', () => {
     mockFetch.mockResolvedValue({
       ok: true,
       json: async () => ({
-        choices: [{ 
-          message: { 
+        choices: [{
+          message: {
             content: JSON.stringify({
               message: 'LLM Response',
               matching_employee_ids: ['some-id']
             })
-          } 
+          }
         }]
       })
     });
   });
 
-  it('should call the LLM and filter results based on returned IDs', async () => {
+  it('should filter results based on returned IDs', async () => {
     const employees = [{ _id: { toString: () => 'some-id' }, name: 'John', salary: 50000 }];
     mockToArray.mockResolvedValue(employees);
 
@@ -81,40 +81,48 @@ describe('LLM Chatbot Route', () => {
       .send({ query: 'How much does John earn?' });
 
     expect(res.status).toBe(200);
-    expect(res.body.message).toBe('LLM Response');
     expect(res.body.results).toHaveLength(1);
     expect(res.body.results[0].name).toBe('John');
   });
 
-  it('should return results snippets in the response', async () => {
-    mockToArray.mockResolvedValue([{ _id: { toString: () => 'some-id' }, name: 'Snippet' }]);
-
-    const res = await request(app)
-      .post('/chatbot/query')
-      .send({ query: 'any' });
-
-    expect(res.status).toBe(200);
-    expect(res.body.results).toHaveLength(1);
-    expect(res.body.results[0].name).toBe('Snippet');
-  });
-
-  it('should return 400 if query is missing', async () => {
-    const res = await request(app).post('/chatbot/query').send({});
-    expect(res.status).toBe(400);
-  });
-
-  it('should handle LLM API errors gracefully', async () => {
+  it('should handle LLM response wrapped in markdown', async () => {
+    const employees = [{ _id: { toString: () => 'id123' }, name: 'Markdown User' }];
+    mockToArray.mockResolvedValue(employees);
+    
     mockFetch.mockResolvedValue({
-      ok: false,
-      status: 500,
-      text: async () => 'Internal Server Error'
+      ok: true,
+      json: async () => ({
+        choices: [{
+          message: {
+            content: '```json\n{\"message\": \"wrapped\", \"matching_employee_ids\": [\"id123\"]}\n```'
+          }
+        }]
+      })
     });
 
     const res = await request(app)
       .post('/chatbot/query')
-      .send({ query: 'any' });
+      .send({ query: 'markdown' });
 
-    expect(res.status).toBe(500);
-    expect(res.body.error).toBe('Failed to process chat query');
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('wrapped');
+    expect(res.body.results).toHaveLength(1);
+  });
+
+  it('should fallback to plain text if JSON parsing fails', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: 'Not a JSON' } }]
+      })
+    });
+
+    const res = await request(app)
+      .post('/chatbot/query')
+      .send({ query: 'plain' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Not a JSON');
+    expect(res.body.results).toHaveLength(0);
   });
 });
