@@ -6,17 +6,13 @@ import type { Employee, CreateEmployeeRequest, UpdateEmployeeRequest } from '../
 const isAndroid = window.location.href.includes('capacitor://') || 
                   (window.location.hostname === 'localhost' && /Android/i.test(navigator.userAgent));
 
-// Try to get backend URL from window.location or fallback
-const currentDomain = window.location.hostname;
-const defaultProdUrl = currentDomain.includes('onrender.com') 
-  ? `https://${currentDomain.replace('frontend', 'backend')}`
-  : 'https://ems-backend.onrender.com';
-
+// Use your actual Render backend URL here
+const PROD_BACKEND_URL = 'https://ems-api.onrender.com';
 const EMULATOR_URL = 'http://10.0.2.2:3000';
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 
                      (isAndroid ? EMULATOR_URL : 
-                     (window.location.hostname === 'localhost' ? 'http://localhost:3000' : defaultProdUrl));
+                     (window.location.hostname === 'localhost' ? 'http://localhost:3000' : PROD_BACKEND_URL));
 
 console.log('App environment:', { isAndroid, hostname: window.location.hostname });
 console.log('API_BASE_URL:', API_BASE_URL);
