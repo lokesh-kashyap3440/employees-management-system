@@ -29,7 +29,11 @@ In this session, we integrated Redis into the `ts-mongo-oidc` application to ena
     *   **`backend/src/routes/notifications.ts`**: Created endpoints for admins to fetch (`GET /notifications`) and clear (`DELETE /notifications`) persistent notifications.
     *   **`backend/src/app.ts`**: Registered the new notifications router.
 
-5.  **Bug Fixes**:
+5.  **Real-time Synchronization (Data Broadcast)**:
+    *   **`backend/src/socket.ts`**: Added `broadcastUpdate` to emit a `data_update` event to all clients.
+    *   **`backend/src/routes/employee.ts`**: Called `broadcastUpdate` after every Create, Update, or Delete operation to trigger a sync across all connected clients.
+
+6.  **Bug Fixes**:
     *   **`backend/src/test-setup.ts`**: Fixed a module path resolution error for `db.ts` that was causing tests to fail.
 
 ### Frontend Changes
@@ -37,6 +41,7 @@ In this session, we integrated Redis into the `ts-mongo-oidc` application to ena
 1.  **Real-time Updates (`frontend/src/App.tsx`)**:
     *   Fixed the Socket.io event name from `join_admin` to `join-admin` to match the backend.
     *   Added logic to automatically dispatch `fetchEmployees()` when a notification is received, ensuring the UI updates instantly.
+    *   **Data Sync**: Added a listener for `data_update` events. When received, it triggers a silent refresh (`fetchEmployees`) so all users see the latest data immediately without a notification popup.
     *   Added `role` to the `useEffect` dependency array to ensure the socket connection logic re-runs when the user's role is loaded, ensuring they join the `admin-room` correctly.
     *   Added debug logs to track socket connection status and notification flow.
 

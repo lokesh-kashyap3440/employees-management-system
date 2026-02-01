@@ -46,3 +46,10 @@ export const notifyAdmin = (data: any) => {
   // Persist to Redis
   pushNotification(data);
 };
+
+export const broadcastUpdate = (type: string) => {
+  if (io) {
+    console.log(`📢 Broadcasting update event: ${type}`);
+    io.emit('data_update', { type, timestamp: new Date() });
+  }
+};

@@ -5,7 +5,7 @@ import { getDb } from '../db.ts';
 import type { Employee } from '../models/employee.ts';
 import { authenticateToken } from '../middleware/auth.ts';
 import type { AuthRequest } from '../middleware/auth.ts';
-import { notifyAdmin } from '../socket.ts';
+import { notifyAdmin, broadcastUpdate } from '../socket.ts';
 import { getCache, setCache, deleteCache, deletePattern } from '../redis.ts';
 
 const router = Router();
@@ -115,6 +115,9 @@ router.post('/', authenticateToken as any, async (req: AuthRequest, res: Respons
 
     // Invalidate list caches
     await deletePattern(`${LIST_CACHE_KEY_PREFIX}*`);
+
+    // Broadcast update to all clients for real-time sync
+    broadcastUpdate('EMPLOYEE_ADDED');
 
     // Notify admin if the creator is not the admin themselves
     if (req.user?.role !== 'admin') {
@@ -310,6 +313,9 @@ router.put('/:id', authenticateToken as any, async (req: AuthRequest, res: Respo
     await deleteCache(`${CACHE_KEY_PREFIX}${id}`);
     await deletePattern(`${LIST_CACHE_KEY_PREFIX}*`);
 
+    // Broadcast update to all clients for real-time sync
+    broadcastUpdate('EMPLOYEE_UPDATED');
+
     // Notify admin
     if (req.user?.role !== 'admin') {
       notifyAdmin({
@@ -380,6 +386,9 @@ router.delete('/:id', authenticateToken as any, async (req: AuthRequest, res: Re
     // Invalidate caches
     await deleteCache(`${CACHE_KEY_PREFIX}${id}`);
     await deletePattern(`${LIST_CACHE_KEY_PREFIX}*`);
+
+    // Broadcast update to all clients for real-time sync
+    broadcastUpdate('EMPLOYEE_DELETED');
 
     // Notify admin
     if (req.user?.role !== 'admin') {

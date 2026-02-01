@@ -75,6 +75,15 @@ function AppContent() {
         ));
       });
 
+      socket.on('data_update', (data) => {
+        console.log('📡 Data update received:', data);
+        console.log('🔄 Refreshing employee list for sync...');
+        dispatch(fetchEmployees())
+          .unwrap()
+          .then(() => console.log('✅ Employee list synced'))
+          .catch((err) => console.error('❌ Failed to sync list:', err));
+      });
+
       return () => {
         console.log('🔌 Disconnecting Socket.io...');
         socket.disconnect();
