@@ -52,13 +52,34 @@ router.post('/query', authenticateToken as any, async (req: AuthRequest, res: Re
     const rangeMatch = q.match(/between\s+(\d+)\s+and\s+(\d+)/i) || q.match(/(\d+)\s+to\s+(\d+)/i);
 
     // 3. Attribute Extraction (Specific field request)
-    const wantsDept = /department|dept/i.test(q);
-    const wantsSalary = /salary|earn|pay/i.test(q);
-    const wantsPosition = /position|job|role|title/i.test(q);
+    const wantsDept = /department|dept|unit|team/i.test(q);
+    const wantsSalary = /salary|earn|pay|income|compensation/i.test(q);
+    const wantsPosition = /position|job|role|title|work\s+as/i.test(q);
 
-    // 4. Name Extraction (Improvement for "does [name] belong to")
-    const nameBelongsMatch = q.match(/does\s+(.*?)\s+belongs?\s+to/i) || q.match(/is\s+(.*?)\s+in/i) || q.match(/about\s+(.*)/i);
-    const nameMatch = nameBelongsMatch || q.match(/named\s+(.*)/i) || q.match(/name\s+is\s+(.*)/i) || q.match(/name\s*:\s*(.*)/i);
+    // 4. Name/Identity Extraction
+    // Try to find names in patterns like "is [Name] ...", "[Name] earns", "about [Name]"
+    const patterns = [
+        /does\s+(.*?)\s+belongs?\s+to/i,
+        /is\s+(.*?)\s+in/i,
+        /about\s+(.*)/i,
+        /is\s+(.*?)\s+earning/i,
+        /is\s+(.*?)\s+salary/i,
+        /salary\s+of\s+(.*)/i,
+        /how\s+much\s+(?:is\s+)?(.*?)\s+(?:earning|earns|paid)/i,
+        /who\s+is\s+(.*)/i
+    ];
+
+    let nameFromPattern = null;
+    for (const pattern of patterns) {
+        const match = q.match(pattern);
+        if (match && match[1]) {
+            // Clean noise from extracted name
+            nameFromPattern = match[1].replace(/['']s|his|her|the/g, '').trim();
+            if (nameFromPattern.length > 1) break;
+        }
+    }
+
+    const nameMatch = nameFromPattern || q.match(/named\s+(.*)/i) || q.match(/name\s+is\s+(.*)/i) || q.match(/name\s*:\s*(.*)/i);
     
     // 5. Simple Comparisons
     const salaryGt = q.match(/earns?\s+more\s+than\s+(\d+)/i) || q.match(/salary\s*>\s*(\d+)/i) || q.match(/above\s+(\d+)/i);
@@ -87,7 +108,10 @@ router.post('/query', authenticateToken as any, async (req: AuthRequest, res: Re
     }
 
     if (deptMatch) filter.department = new RegExp(deptMatch[1].trim(), 'i');
-    if (nameMatch) filter.name = new RegExp(nameMatch[1].trim(), 'i');
+    if (nameMatch) {
+        const nameVal = typeof nameMatch === 'string' ? nameMatch : (nameMatch[1] || nameMatch[0]);
+        filter.name = new RegExp(nameVal.trim(), 'i');
+    }
     if (posMatch) filter.position = new RegExp(posMatch[1].trim(), 'i');
 
     // Fallback: If no specific filters matched (except role-based), search broadly
@@ -96,7 +120,8 @@ router.post('/query', authenticateToken as any, async (req: AuthRequest, res: Re
     
     if (Object.keys(filter).length === baseFilterCount && !isHighest && !isLowest) {
         // Broad/Fuzzy search logic
-        const searchTerms = q.split(/\s+/).filter(word => word.length > 2 && !['does', 'belongs', 'which', 'what'].includes(word));
+        const noiseWords = ['does', 'belongs', 'which', 'what', 'how', 'much', 'is', 'are', 'the', 'earning', 'earns', 'salary', 'belongs', 'to', 'about', 'who'];
+        const searchTerms = q.split(/\s+/).filter(word => word.length > 2 && !noiseWords.includes(word));
         
         if (searchTerms.length > 0) {
             const termFilters = searchTerms.map(term => {
@@ -118,7 +143,7 @@ router.post('/query', authenticateToken as any, async (req: AuthRequest, res: Re
                 finalFilter = { ...broadSearch, createdBy: req.user?.username };
             }
         } else {
-            // Very short query, try direct regex on original string
+            // Very short or pure noise query, try direct regex on original string if it's not all noise
             const searchRegex = new RegExp(q, 'i');
             const simpleBroad = [
                 { name: searchRegex },

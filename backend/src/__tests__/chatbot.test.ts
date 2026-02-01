@@ -106,6 +106,28 @@ describe('Chatbot Route', () => {
     expect(res.body.message).toBe('Ramesh is in the Sales department.');
   });
 
+  it('should answer how much an employee is earning', async () => {
+    mockToArray.mockResolvedValue([{ name: 'Hemant', salary: 75000 }]);
+
+    const res = await request(app)
+      .post('/chatbot/query')
+      .send({ query: 'how much salary is Hemant earning?' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toContain('Hemant\'s salary is $75,000');
+  });
+
+  it('should handle typos and conversational noise like "what is is salary"', async () => {
+    mockToArray.mockResolvedValue([{ name: 'John', salary: 50000 }]);
+
+    const res = await request(app)
+      .post('/chatbot/query')
+      .send({ query: 'what is is john salary' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toContain('John\'s salary is $50,000');
+  });
+
   it('should filter by department', async () => {
     mockToArray.mockResolvedValue([{ name: 'Engineer', department: 'Engineering' }]);
 
