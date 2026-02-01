@@ -35,9 +35,15 @@ In this session, we integrated Redis into the `ts-mongo-oidc` application to ena
 
 6.  **Test Suite Improvements**:
     *   **`backend/src/__tests__/*.test.ts`**: Implemented `jest.unstable_mockModule` for `redis.ts` and `socket.ts`.
-    *   **Resolution**: This resolved the "open handles" warning in Jest by ensuring that tests do not attempt to establish real Redis or Socket.io connections, which were preventing the test process from exiting gracefully.
+    *   **Resolution**: This resolved the "open handles" warning in Jest by ensuring that tests do not attempt to establish real Redis or Socket.io connections.
+    *   **New Backend Tests**: Created `backend/src/__tests__/notifications.test.ts` to test the new notification endpoints.
 
-7.  **Bug Fixes**:
+7.  **Frontend Test Enhancements**:
+    *   **New Store Tests**: Created `frontend/src/store/__tests__/notificationSlice.test.ts` using Vitest.
+    *   **Component Fixes**: Updated `AuthForm.tsx` with proper accessibility labels (`htmlFor`) to fix test failures and improve UX.
+    *   **Store Mocking**: Updated `Header.test.tsx` to include the new `notification` slice in its test store setup.
+
+8.  **Bug Fixes**:
     *   **`backend/src/test-setup.ts`**: Fixed a module path resolution error for `db.ts` that was causing tests to fail.
 
 ### Frontend Changes

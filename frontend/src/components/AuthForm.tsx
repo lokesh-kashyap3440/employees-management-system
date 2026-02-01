@@ -52,10 +52,11 @@ export const AuthForm: React.FC<AuthFormProps> = ({
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-xs font-black text-gray-400 uppercase ml-1 tracking-widest">Username</label>
+              <label htmlFor="username" className="text-xs font-black text-gray-400 uppercase ml-1 tracking-widest">Username</label>
               <div className="relative">
                 <User className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300" size={20} />
                 <input
+                  id="username"
                   className="w-full pl-14 pr-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all font-medium text-gray-700 placeholder:text-gray-300"
                   type="text"
                   placeholder="Your username"
@@ -67,10 +68,11 @@ export const AuthForm: React.FC<AuthFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-black text-gray-400 uppercase ml-1 tracking-widest">Password</label>
+              <label htmlFor="password" className="text-xs font-black text-gray-400 uppercase ml-1 tracking-widest">Password</label>
               <div className="relative">
                 <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300" size={20} />
                 <input
+                  id="password"
                   className="w-full pl-14 pr-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all font-medium text-gray-700 placeholder:text-gray-300"
                   type="password"
                   placeholder="••••••••"
