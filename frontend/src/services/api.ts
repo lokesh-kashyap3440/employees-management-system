@@ -14,6 +14,11 @@ export const API_BASE_URL = import.meta.env.VITE_API_URL ||
                      (isAndroid ? EMULATOR_URL : 
                      (window.location.hostname === 'localhost' ? 'http://localhost:3000' : PROD_BACKEND_URL));
 
+console.log('--- API DEBUG ---');
+console.log('Hostname:', window.location.hostname);
+console.log('API URL:', API_BASE_URL);
+console.log('-----------------');
+
 console.log('App environment:', { isAndroid, hostname: window.location.hostname });
 console.log('API_BASE_URL:', API_BASE_URL);
 
