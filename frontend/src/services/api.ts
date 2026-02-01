@@ -10,7 +10,13 @@ const isAndroid = window.location.href.includes('capacitor://') ||
 const PROD_BACKEND_URL = 'https://ems-api.onrender.com';
 const EMULATOR_URL = 'http://10.0.2.2:3000';
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 
+// Ensure VITE_API_URL is an absolute URL if provided
+let rawApiUrl = import.meta.env.VITE_API_URL;
+if (rawApiUrl && !rawApiUrl.startsWith('http')) {
+  rawApiUrl = `https://${rawApiUrl}`;
+}
+
+export const API_BASE_URL = rawApiUrl || 
                      (isAndroid ? EMULATOR_URL : 
                      (window.location.hostname === 'localhost' ? 'http://localhost:3000' : PROD_BACKEND_URL));
 

@@ -48,3 +48,5 @@ services:
     envVars:
       - key: VITE_GOOGLE_CLIENT_ID
         sync: false # User must enter this in Render Dashboard
+      - key: VITE_API_URL
+        value: https://ems-api.onrender.com
