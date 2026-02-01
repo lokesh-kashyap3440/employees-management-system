@@ -12,6 +12,7 @@ import { Toaster, toast } from 'react-hot-toast';
 import { AnimatePresence } from 'framer-motion';
 import { io } from 'socket.io-client';
 import { addNotification } from './store/notificationSlice';
+import { fetchEmployees } from './store/employeeSlice';
 import { API_BASE_URL } from './services/api';
 
 function AppContent() {
@@ -32,12 +33,15 @@ function AppContent() {
         console.log('🔌 Connected to Socket.io');
         if (role === 'admin') {
           console.log('👑 Joining admin room...');
-          socket.emit('join_admin');
+          socket.emit('join-admin');
         }
       });
 
       socket.on('notification', (data) => {
         dispatch(addNotification(data));
+        // Refresh employee list when a notification is received
+        dispatch(fetchEmployees());
+        
         toast.custom((t) => (
           <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-2xl rounded-[2rem] pointer-events-auto flex ring-1 ring-black ring-opacity-5 border border-blue-50`}>
             <div className="flex-1 w-0 p-6">
