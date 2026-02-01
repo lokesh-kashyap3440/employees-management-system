@@ -61,7 +61,10 @@ In this session, we integrated Redis into the `ts-mongo-oidc` application to ena
     *   **Frontend**: Installed `@vitest/coverage-v8` and configured Vitest in `vite.config.ts` to generate coverage reports.
     *   **Usage**: Both applications now support `npm run test:coverage` to generate detailed reports.
 
-9.  **Bug Fixes**:
+9.  **Developer Experience**:
+    *   **Backend**: Switched the `dev` command to use `ts-node-dev` with `--respawn` and `--transpile-only` flags for faster development and automatic server restarts on file changes.
+
+10. **Bug Fixes**:
     *   **`backend/src/test-setup.ts`**: Fixed a module path resolution error for `db.ts` that was causing tests to fail.
 
 ### Frontend Changes
