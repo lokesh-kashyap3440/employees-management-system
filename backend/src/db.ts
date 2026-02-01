@@ -1,31 +1,28 @@
-import { MongoClient, Db } from 'mongodb';
+import { MongoClient } from 'mongodb';
+import type { Db } from 'mongodb';
 
-let client: MongoClient;
-let db: Db;
+let client: MongoClient | null = null;
+let db: Db | null = null;
 
-export async function connectToDatabase(uri: string): Promise<Db> {
-  if (db) {
-    return db;
-  }
+export const connectToDatabase = async (uri: string) => {
+  if (db) return db;
   client = new MongoClient(uri);
   await client.connect();
-  db = client.db(); // uses database name from URI
-  console.log('✅ Connected to MongoDB');
+  db = client.db();
   return db;
-}
+};
 
-export function getDb(): Db {
+export const getDb = (): Db => {
   if (!db) {
-    throw new Error('Database not connected. Call connectToDatabase() first.');
+    throw new Error('Database not initialized. Call connectToDatabase first.');
   }
   return db;
-}
+};
 
-export async function closeDB(): Promise<void> {
+export const closeDB = async () => {
   if (client) {
     await client.close();
-    console.log('✅ Disconnected from MongoDB');
-    client = undefined as any;
-    db = undefined as any;
+    client = null;
+    db = null;
   }
-}
+};

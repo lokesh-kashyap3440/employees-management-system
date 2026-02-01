@@ -59,6 +59,7 @@ export const Header: React.FC = () => {
               <div className="relative">
                 <button 
                   onClick={toggleNotifications}
+                  aria-label="Toggle notifications"
                   className="p-2 text-gray-400 hover:text-gray-600 transition-colors relative"
                 >
                   <Bell size={20} />
@@ -119,6 +120,7 @@ export const Header: React.FC = () => {
               </div>
               <button 
                 onClick={() => setShowProfileModal(true)}
+                aria-label="Open profile settings"
                 className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <Settings size={20} />

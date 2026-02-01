@@ -1,5 +1,4 @@
 import { connectDB, closeDB } from './db.ts';
-import { Employee } from './models/employee.ts';
 
 const firstNames = [
   'Alice', 'Bob', 'Charlie', 'David', 'Emma', 'Frank', 'Grace', 'Henry', 'Ivy', 'Jack',

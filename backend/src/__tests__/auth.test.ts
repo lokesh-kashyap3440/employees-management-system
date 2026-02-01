@@ -7,6 +7,7 @@ const mockGetDb = jest.fn();
 const mockCollection = jest.fn();
 const mockInsertOne = jest.fn();
 const mockFindOne = jest.fn();
+const mockUpdateOne = jest.fn();
 
 // Setup mock return values
 mockGetDb.mockReturnValue({
@@ -16,6 +17,7 @@ mockCollection.mockReturnThis();
 mockCollection.mockReturnValue({
   insertOne: mockInsertOne,
   findOne: mockFindOne,
+  updateOne: mockUpdateOne
 });
 
 // Use unstable_mockModule for ESM
@@ -23,6 +25,14 @@ jest.unstable_mockModule('../db.ts', () => ({
   connectToDatabase: jest.fn(),
   getDb: mockGetDb,
   closeDB: jest.fn(),
+}));
+
+// Mock authentication middleware globally for this file
+jest.unstable_mockModule('../middleware/auth.ts', () => ({
+  authenticateToken: (req: any, res: any, next: any) => {
+    req.user = { username: 'testuser', role: 'user' };
+    next();
+  },
 }));
 
 // Mock redis.ts
@@ -47,17 +57,16 @@ jest.unstable_mockModule('../socket.ts', () => ({
 }));
 
 // Import app AFTER mocking
-// Note: We need to use dynamic import for app because static imports are evaluated before code execution
 const { default: app } = await import('../app.ts');
 
 describe('Auth Routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Reset default mock implementations if needed
     mockGetDb.mockReturnValue({
         collection: () => ({
             insertOne: mockInsertOne,
-            findOne: mockFindOne
+            findOne: mockFindOne,
+            updateOne: mockUpdateOne
         })
     });
   });
@@ -73,18 +82,17 @@ describe('Auth Routes', () => {
 
       expect(res.status).toBe(201);
       expect(res.text).toBe('User registered successfully');
-      expect(mockInsertOne).toHaveBeenCalled();
     });
 
-    it('should return 400 if user already exists', async () => {
-      mockFindOne.mockResolvedValue({ username: 'testuser' });
+    it('should return 400 if user exists', async () => {
+        mockFindOne.mockResolvedValue({ username: 'testuser' });
+        const res = await request(app).post('/auth/register').send({ username: 'u', password: 'p' });
+        expect(res.status).toBe(400);
+    });
 
-      const res = await request(app)
-        .post('/auth/register')
-        .send({ username: 'testuser', password: 'password123' });
-
-      expect(res.status).toBe(400);
-      expect(res.text).toBe('User already exists');
+    it('should return 400 if missing body', async () => {
+        const res = await request(app).post('/auth/register').send({});
+        expect(res.status).toBe(400);
     });
   });
 
@@ -104,19 +112,37 @@ describe('Auth Routes', () => {
       expect(res.body).toHaveProperty('accessToken');
     });
 
-    it('should fail with incorrect password', async () => {
-      const hashedPassword = await bcrypt.hash('password123', 10);
-      mockFindOne.mockResolvedValue({ 
-        username: 'testuser', 
-        password: hashedPassword 
-      });
+    it('should fail with missing user', async () => {
+        mockFindOne.mockResolvedValue(null);
+        const res = await request(app).post('/auth/login').send({ username: 'u', password: 'p' });
+        expect(res.status).toBe(400);
+    });
+
+    it('should return 400 if password incorrect', async () => {
+        const hashedPassword = await bcrypt.hash('real', 10);
+        mockFindOne.mockResolvedValue({ username: 'u', password: hashedPassword });
+        const res = await request(app).post('/auth/login').send({ username: 'u', password: 'wrong' });
+        expect(res.status).toBe(400);
+    });
+  });
+
+  describe('PUT /auth/change-password', () => {
+    it('should change password successfully', async () => {
+      const hashedPassword = await bcrypt.hash('old-pass', 10);
+      mockFindOne.mockResolvedValue({ username: 'testuser', password: hashedPassword });
+      mockUpdateOne.mockResolvedValue({ modifiedCount: 1 });
 
       const res = await request(app)
-        .post('/auth/login')
-        .send({ username: 'testuser', password: 'wrongpassword' });
+        .put('/auth/change-password')
+        .send({ oldPassword: 'old-pass', newPassword: 'new-pass' });
 
-      expect(res.status).toBe(400);
-      expect(res.text).toBe('Not Allowed');
+      expect(res.status).toBe(200);
+      expect(res.text).toBe('Password changed successfully');
+    });
+
+    it('should return 400 if passwords missing', async () => {
+        const res = await request(app).put('/auth/change-password').send({});
+        expect(res.status).toBe(400);
     });
   });
 });

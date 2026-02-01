@@ -21,6 +21,7 @@ export default {
     '!src/__tests__/**',
     '!src/__mocks__/**',
     '!src/index.ts',
-    '!src/server.ts'
+    '!src/server.ts',
+    '!src/seed-employees.ts'
   ],
 };

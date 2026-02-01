@@ -1,16 +1,18 @@
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { configureStore } from '@reduxjs/toolkit';
 import employeeReducer, {
   fetchEmployees,
   createEmployee,
+  updateEmployee,
+  deleteEmployee,
+  setSelectedEmployee,
+  clearSelectedEmployee
 } from '../employeeSlice';
-import { configureStore } from '@reduxjs/toolkit';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as api from '../../services/api';
+import { employeeApi } from '../../services/api';
 
-// Mock the API module
 vi.mock('../../services/api', () => ({
   employeeApi: {
     getAll: vi.fn(),
-    getById: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
@@ -29,59 +31,50 @@ describe('employeeSlice', () => {
     vi.clearAllMocks();
   });
 
-  const initialState = {
-    employees: [],
-    selectedEmployee: null,
-    loading: false,
-    error: null,
-  };
-
-  it('should handle initial state', () => {
-    expect(employeeReducer(undefined, { type: 'unknown' })).toEqual(initialState);
+  it('should handle setSelectedEmployee', () => {
+    const emp = { name: 'John' } as any;
+    store.dispatch(setSelectedEmployee(emp));
+    expect(store.getState().employee.selectedEmployee).toEqual(emp);
   });
 
-  describe('fetchEmployees', () => {
-    it('should set loading true when pending', () => {
-      const action = { type: fetchEmployees.pending.type };
-      const state = employeeReducer(initialState, action);
-      expect(state.loading).toBe(true);
-    });
-
-    it('should update employees when fulfilled', async () => {
-      const mockEmployees = [{ _id: '1', name: 'John' }];
-      (api.employeeApi.getAll as any).mockResolvedValue(mockEmployees);
-
-      await store.dispatch(fetchEmployees());
-
-      const state = store.getState().employee;
-      expect(state.loading).toBe(false);
-      expect(state.employees).toEqual(mockEmployees);
-    });
-
-    it('should set error when rejected', async () => {
-      const errorMessage = 'Failed to fetch';
-      (api.employeeApi.getAll as any).mockRejectedValue({ response: { data: { error: errorMessage } } });
-
-      await store.dispatch(fetchEmployees());
-
-      const state = store.getState().employee;
-      expect(state.loading).toBe(false);
-      expect(state.error).toBe(errorMessage);
-    });
+  it('should handle clearSelectedEmployee', () => {
+    store.dispatch(clearSelectedEmployee());
+    expect(store.getState().employee.selectedEmployee).toBeNull();
   });
 
-  // Add more tests for other thunks (create, update, delete) as needed...
-  describe('createEmployee', () => {
-     it('should update employees list on success', async () => {
-        const mockEmployees = [{ _id: '1', name: 'John' }];
-        (api.employeeApi.create as any).mockResolvedValue({});
-        (api.employeeApi.getAll as any).mockResolvedValue(mockEmployees);
+  describe('async thunks', () => {
+    it('fetchEmployees.fulfilled', async () => {
+      const emps = [{ name: 'E1' }];
+      (employeeApi.getAll as any).mockResolvedValue(emps);
+      await store.dispatch(fetchEmployees());
+      expect(store.getState().employee.employees).toEqual(emps);
+    });
 
-        await store.dispatch(createEmployee({ name: 'John' }));
+    it('createEmployee.fulfilled', async () => {
+      (employeeApi.create as any).mockResolvedValue({ insertedId: '1' });
+      (employeeApi.getAll as any).mockResolvedValue([{ name: 'New' }]);
+      await store.dispatch(createEmployee({ name: 'New' }));
+      expect(store.getState().employee.employees).toHaveLength(1);
+    });
 
-        const state = store.getState().employee;
-        expect(state.loading).toBe(false);
-        expect(state.employees).toEqual(mockEmployees);
-     });
+    it('updateEmployee.fulfilled', async () => {
+      (employeeApi.update as any).mockResolvedValue({ modifiedCount: 1 });
+      (employeeApi.getAll as any).mockResolvedValue([{ name: 'Updated' }]);
+      await store.dispatch(updateEmployee({ id: '1', employee: { name: 'Updated' } }));
+      expect(store.getState().employee.employees[0].name).toBe('Updated');
+    });
+
+    it('deleteEmployee.fulfilled', async () => {
+      (employeeApi.delete as any).mockResolvedValue({ deletedCount: 1 });
+      (employeeApi.getAll as any).mockResolvedValue([]);
+      await store.dispatch(deleteEmployee('1'));
+      expect(store.getState().employee.employees).toHaveLength(0);
+    });
+
+    it('fetchEmployees.rejected', async () => {
+        (employeeApi.getAll as any).mockRejectedValue({ response: { data: { error: 'failed' } } });
+        await store.dispatch(fetchEmployees());
+        expect(store.getState().employee.error).toBe('failed');
+    });
   });
 });

@@ -37,6 +37,26 @@ describe('Header', () => {
     expect(screen.getByRole('button', { name: /Logout/i })).toBeInTheDocument();
   });
 
+  it('toggles notifications on click', async () => {
+    renderWithStore({ 
+        auth: { user: 'admin', role: 'admin', isAuthenticated: true },
+        notification: { notifications: [{ id: '1', message: 'Hi', timestamp: new Date().toISOString(), isRead: false }], unreadCount: 1, loading: false }
+    });
+
+    fireEvent.click(screen.getByLabelText(/Toggle notifications/i));
+    expect(screen.getByText('Notifications')).toBeInTheDocument();
+    expect(screen.getByText('Hi')).toBeInTheDocument();
+  });
+
+  it('opens profile modal on click', () => {
+    renderWithStore({ 
+        auth: { user: 'testuser', isAuthenticated: true, token: 'token' }
+    });
+
+    fireEvent.click(screen.getByLabelText(/Open profile settings/i));
+    expect(screen.getByText('Security')).toBeInTheDocument();
+  });
+
   it('dispatches logout action on button click', () => {
     const { store } = renderWithStore({ 
         auth: { user: 'testuser', isAuthenticated: true, token: 'token' }

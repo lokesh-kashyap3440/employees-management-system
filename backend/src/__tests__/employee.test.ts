@@ -138,6 +138,25 @@ describe('Employee Routes (Role: User)', () => {
       const insertedDoc = mockInsertOne.mock.calls[0][0];
       expect(insertedDoc.createdBy).toBe('testuser');
     });
+
+    it('should return 400 if name is missing', async () => {
+      const res = await request(app).post('/employees').send({});
+      expect(res.status).toBe(400);
+    });
+
+    it('should return 500 on server error', async () => {
+      mockInsertOne.mockRejectedValue(new Error('fail'));
+      const res = await request(app).post('/employees').send({ name: 'John' });
+      expect(res.status).toBe(500);
+    });
+  });
+
+  describe('GET /employees', () => {
+    it('should return 500 on server error', async () => {
+      mockToArray.mockRejectedValue(new Error('fail'));
+      const res = await request(app).get('/employees');
+      expect(res.status).toBe(500);
+    });
   });
 
   describe('PUT /employees/:id', () => {

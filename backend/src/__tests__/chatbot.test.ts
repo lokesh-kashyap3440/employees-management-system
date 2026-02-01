@@ -85,7 +85,20 @@ describe('LLM Chatbot Route (Refined JSON Parsing)', () => {
     expect(res.body.results[0].name).toBe('John');
   });
 
-  it('should handle LLM response wrapped in markdown', async () => {
+  it('should filter by createdBy for non-admin user', async () => {
+    mockUser = { username: 'regular', role: 'user' };
+    mockToArray.mockResolvedValue([]);
+
+    await request(app)
+      .post('/chatbot/query')
+      .send({ query: 'who am i?' });
+
+    expect(mockFind).toHaveBeenCalledWith(expect.objectContaining({
+      createdBy: 'regular'
+    }));
+  });
+
+  it('should return results snippets in the response', async () => {
     const employees = [{ _id: { toString: () => 'id123' }, name: 'Markdown User' }];
     mockToArray.mockResolvedValue(employees);
     
