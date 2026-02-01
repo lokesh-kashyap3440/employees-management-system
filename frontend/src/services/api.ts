@@ -102,12 +102,26 @@ export const employeeApi = {
 
     // Clear all notifications
 
-    clearAll: async (): Promise<void> => {
+        clearAll: async (): Promise<void> => {
 
-      await apiClient.delete('/notifications');
+          await apiClient.delete('/notifications');
 
-    },
+        },
 
-  };
+      };
+
+    
+
+      export const chatbotApi = {
+
+        query: async (query: string): Promise<{ results: any[]; message: string }> => {
+
+          const response = await apiClient.post<{ results: any[]; message: string }>('/chatbot/query', { query });
+
+          return response.data;
+
+        },
+
+      };
 
   

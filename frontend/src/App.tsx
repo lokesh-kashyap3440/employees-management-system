@@ -5,6 +5,7 @@ import type { RootState, AppDispatch } from './store';
 import { EmployeeList } from './components/EmployeeList';
 import { EmployeeForm } from './components/EmployeeForm';
 import { Header } from './components/Header';
+import { ChatBot } from './components/ChatBot';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import type { Employee } from './types/employee';
@@ -140,6 +141,7 @@ function AppContent() {
           )}
         </AnimatePresence>
       </main>
+      <ChatBot />
     </div>
   );
 }

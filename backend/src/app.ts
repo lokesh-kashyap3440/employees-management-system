@@ -4,6 +4,7 @@ import type { Request, Response } from 'express';
 import employeeRouter from './routes/employee.ts';
 import authRouter from './routes/auth.ts';
 import notificationsRouter from './routes/notifications.ts';
+import chatbotRouter from './routes/chatbot.ts';
 import { setupSwagger } from './swagger.ts';
 
 const app = express();
@@ -30,5 +31,6 @@ app.get('/health', (_req: Request, res: Response) => {
 app.use('/auth', authRouter);
 app.use('/employees', employeeRouter);
 app.use('/notifications', notificationsRouter);
+app.use('/chatbot', chatbotRouter);
 
 export default app;

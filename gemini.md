@@ -38,7 +38,12 @@ In this session, we integrated Redis into the `ts-mongo-oidc` application to ena
     *   **Resolution**: This resolved the "open handles" warning in Jest by ensuring that tests do not attempt to establish real Redis or Socket.io connections.
     *   **New Backend Tests**: Created `backend/src/__tests__/notifications.test.ts` to test the new notification endpoints.
 
-7.  **Frontend Test Enhancements**:
+7.  **Chatbot Assistant**:
+    *   **Backend**: Created `backend/src/routes/chatbot.ts` with a natural language query parser for employee data.
+    *   **Frontend**: Built a floating `ChatBot.tsx` widget with real-time query support and formatted result cards.
+    *   **Security**: Integrated role-based filtering so users only query their own data while admins can query everything.
+
+8.  **Frontend Test Enhancements**:
     *   **New Store Tests**: Created `frontend/src/store/__tests__/notificationSlice.test.ts` using Vitest.
     *   **Component Fixes**: Updated `AuthForm.tsx` with proper accessibility labels (`htmlFor`) to fix test failures and improve UX.
     *   **Store Mocking**: Updated `Header.test.tsx` to include the new `notification` slice in its test store setup.
