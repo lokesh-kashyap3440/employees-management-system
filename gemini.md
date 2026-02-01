@@ -38,15 +38,16 @@ In this session, we integrated Redis into the `ts-mongo-oidc` application to ena
     *   **Resolution**: This resolved the "open handles" warning in Jest by ensuring that tests do not attempt to establish real Redis or Socket.io connections.
     *   **New Backend Tests**: Created `backend/src/__tests__/notifications.test.ts` to test the new notification endpoints.
 
-7.  **Chatbot Assistant**:
-    *   **Backend**: Created `backend/src/routes/chatbot.ts` with an advanced natural language query parser.
-    *   **Features**:
-        *   **Range Queries**: "Who earns between 100000 and 200000?"
-        *   **Superlatives**: "Whose salary is the highest?" or "Who earns the least?"
-        *   **Attribute Specific**: "Which department does Ramesh belong to?" (Returns a targeted sentence response).
-        *   **Fuzzy Search**: Improved multi-term matching using `$and` for better precision.
-    *   **Frontend**: Built a floating `ChatBot.tsx` widget with real-time query support and formatted result cards.
-    *   **Security**: Integrated role-based filtering so users only query their own data while admins can query everything.
+7.  **Smart Chatbot Assistant (LLM-Powered)**:
+    *   **Backend**: Replaced regex-based parsing with a full LLM integration in `backend/src/routes/chatbot.ts`.
+    *   **LLM Support**: Configurable to use local **Ollama** (`qwen2.5-coder:3b`) or cloud models (compatible with OpenAI API format).
+    *   **Context Injection**: The assistant is provided with real-time employee data (filtered by user role) as context for every query.
+    *   **Capabilities**:
+        *   **Reasoning**: Can perform calculations like average salaries or total headcount.
+        *   **Natural Conversation**: Handles complex variations in phrasing and follows conversational context.
+        *   **Security**: Maintains strict role-based access; the LLM only "sees" what the user is allowed to see.
+    *   **Frontend**: Enhanced the `ChatBot.tsx` widget to handle rich text responses from the LLM.
+    *   **Testing**: Updated `backend/src/__tests__/chatbot.test.ts` to mock the global `fetch` API and verify LLM interaction logic.
 
 8.  **Frontend Test Enhancements**:
     *   **New Store Tests**: Created `frontend/src/store/__tests__/notificationSlice.test.ts` using Vitest.

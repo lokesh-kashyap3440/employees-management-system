@@ -46,6 +46,12 @@ The backend uses WebSockets to provide instant feedback to admin users:
    PORT=3000
    JWT_SECRET=your_secret_key
    GOOGLE_CLIENT_ID=your_google_client_id
+   
+   # LLM Configuration (Optional for Chatbot)
+   LLM_PROVIDER=ollama
+   LLM_API_URL=http://localhost:11434/v1/chat/completions
+   LLM_MODEL=qwen2.5-coder:3b
+   LLM_API_KEY=your_optional_api_key
    ```
 
 3. **Run the Application**:

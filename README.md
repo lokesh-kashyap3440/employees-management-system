@@ -36,11 +36,11 @@ This project is a monorepo containing:
 - **Persistent Notifications**: Admin notifications are stored in Redis and persist across server restarts.
 - **Live Sync**: Silent background synchronization for all users.
 
-### 🤖 Smart Chatbot Assistant
-- **Natural Language Queries**: Query employees using conversational phrases (e.g., "Who earns more than 60k?").
-- **Superlatives & Ranges**: Supports "highest salary", "lowest salary", and range queries like "between 50k and 100k".
-- **Specific Attribute Requests**: Ask targeted questions like "What is Ramesh's department?".
-- **Role-Based Privacy**: Securely filters results based on user roles.
+### 🤖 Smart Chatbot Assistant (LLM-Powered)
+- **Natural Language Queries**: Powered by LLMs (Ollama `qwen2.5-coder` locally or cloud models).
+- **Intelligent Reasoning**: Beyond simple regex, the bot can perform calculations (averages, totals) and understand complex conversational context.
+- **Secure Data Context**: The bot only sees data the current user is authorized to access.
+- **Flexible Deployment**: Configurable to use local instances or cloud-based AI providers.
 
 ---
 

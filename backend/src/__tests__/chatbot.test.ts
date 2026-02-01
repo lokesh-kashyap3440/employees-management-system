@@ -3,11 +3,9 @@ import request from 'supertest';
 
 // Define mocks
 const mockToArray = jest.fn();
-const mockLimit = jest.fn().mockReturnThis();
-const mockSort = jest.fn().mockReturnThis();
+const mockProject = jest.fn().mockReturnThis();
 const mockFind = jest.fn().mockReturnValue({ 
-  sort: mockSort,
-  limit: mockLimit,
+  project: mockProject,
   toArray: mockToArray 
 });
 const mockCollection = jest.fn().mockReturnValue({ find: mockFind });
@@ -47,130 +45,73 @@ jest.unstable_mockModule('../middleware/auth.ts', () => ({
   },
 }));
 
+// Mock global fetch
+const mockFetch = jest.fn();
+global.fetch = mockFetch as any;
+
 const { default: app } = await import('../app.ts');
 
-describe('Chatbot Route', () => {
+describe('LLM Chatbot Route', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUser = { username: 'admin', role: 'admin' };
+    
+    // Default fetch mock response
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: 'LLM Response' } }]
+      })
+    });
   });
 
-  it('should filter by salary more than X', async () => {
-    mockToArray.mockResolvedValue([{ name: 'Rich Employee', salary: 100000 }]);
+  it('should call the LLM with employee data as context', async () => {
+    const employees = [{ name: 'John', salary: 50000 }];
+    mockToArray.mockResolvedValue(employees);
 
     const res = await request(app)
       .post('/chatbot/query')
-      .send({ query: 'Who earns more than 90000?' });
+      .send({ query: 'How much does John earn?' });
 
     expect(res.status).toBe(200);
-    expect(mockFind).toHaveBeenCalledWith(expect.objectContaining({
-      salary: { $gt: 90000 }
-    }));
+    expect(res.body.message).toBe('LLM Response');
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.stringContaining('John')
+      })
+    );
+  });
+
+  it('should return results snippets in the response', async () => {
+    mockToArray.mockResolvedValue([{ name: 'Snippet' }]);
+
+    const res = await request(app)
+      .post('/chatbot/query')
+      .send({ query: 'any' });
+
     expect(res.body.results).toHaveLength(1);
-  });
-
-  it('should filter by salary range (between)', async () => {
-    mockToArray.mockResolvedValue([{ name: 'Mid Range', salary: 150000 }]);
-
-    const res = await request(app)
-      .post('/chatbot/query')
-      .send({ query: 'who earns between 100000 and 200000?' });
-
-    expect(res.status).toBe(200);
-    expect(mockFind).toHaveBeenCalledWith(expect.objectContaining({
-      salary: { $gte: 100000, $lte: 200000 }
-    }));
-  });
-
-  it('should find the highest salary', async () => {
-    mockToArray.mockResolvedValue([{ name: 'CEO', salary: 500000 }]);
-
-    const res = await request(app)
-      .post('/chatbot/query')
-      .send({ query: 'whose salary is the highest?' });
-
-    expect(res.status).toBe(200);
-    expect(mockSort).toHaveBeenCalledWith({ salary: -1, _id: 1 });
-    expect(mockLimit).toHaveBeenCalledWith(1);
-    expect(res.body.message).toContain('highest salary is CEO');
-  });
-
-  it('should answer which department an employee belongs to', async () => {
-    mockToArray.mockResolvedValue([{ name: 'Ramesh', department: 'Sales' }]);
-
-    const res = await request(app)
-      .post('/chatbot/query')
-      .send({ query: 'which department does Ramesh belongs to?' });
-
-    expect(res.status).toBe(200);
-    expect(res.body.message).toBe('Ramesh is in the Sales department.');
-  });
-
-  it('should answer how much an employee is earning', async () => {
-    mockToArray.mockResolvedValue([{ name: 'Hemant', salary: 75000 }]);
-
-    const res = await request(app)
-      .post('/chatbot/query')
-      .send({ query: 'how much salary is Hemant earning?' });
-
-    expect(res.status).toBe(200);
-    expect(res.body.message).toContain('Hemant\'s salary is $75,000');
-  });
-
-  it('should handle typos and conversational noise like "what is is salary"', async () => {
-    mockToArray.mockResolvedValue([{ name: 'John', salary: 50000 }]);
-
-    const res = await request(app)
-      .post('/chatbot/query')
-      .send({ query: 'what is is john salary' });
-
-    expect(res.status).toBe(200);
-    expect(res.body.message).toContain('John\'s salary is $50,000');
-  });
-
-  it('should filter by department', async () => {
-    mockToArray.mockResolvedValue([{ name: 'Engineer', department: 'Engineering' }]);
-
-    const res = await request(app)
-      .post('/chatbot/query')
-      .send({ query: 'Who is in the Engineering department?' });
-
-    expect(res.status).toBe(200);
-    // It uses a Regex for department
-    const calledFilter = mockFind.mock.calls[0][0] as any;
-    expect(calledFilter.department).toBeInstanceOf(RegExp);
-    expect(calledFilter.department.source.toLowerCase()).toBe('engineering');
-  });
-
-  it('should perform broad search if no patterns match', async () => {
-    mockToArray.mockResolvedValue([{ name: 'John Doe' }]);
-
-    const res = await request(app)
-      .post('/chatbot/query')
-      .send({ query: 'John' });
-
-    expect(res.status).toBe(200);
-    const calledFilter = mockFind.mock.calls[0][0] as any;
-    // For single word 'John', it uses $or
-    expect(calledFilter.$or).toBeDefined();
-    expect(calledFilter.$or).toHaveLength(3); 
-  });
-
-  it('should perform multi-term search using $and', async () => {
-    mockToArray.mockResolvedValue([{ name: 'John Doe', department: 'Engineering' }]);
-
-    const res = await request(app)
-      .post('/chatbot/query')
-      .send({ query: 'John Engineering' });
-
-    expect(res.status).toBe(200);
-    const calledFilter = mockFind.mock.calls[0][0] as any;
-    expect(calledFilter.$and).toBeDefined();
-    expect(calledFilter.$and).toHaveLength(2); // One for 'John', one for 'Engineering'
+    expect(res.body.results[0].name).toBe('Snippet');
   });
 
   it('should return 400 if query is missing', async () => {
     const res = await request(app).post('/chatbot/query').send({});
     expect(res.status).toBe(400);
+  });
+
+  it('should handle LLM API errors gracefully', async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 500,
+      text: async () => 'Internal Server Error'
+    });
+
+    const res = await request(app)
+      .post('/chatbot/query')
+      .send({ query: 'any' });
+
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('Failed to process chat query with LLM');
   });
 });
