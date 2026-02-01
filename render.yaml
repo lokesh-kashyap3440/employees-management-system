@@ -43,7 +43,7 @@ services:
     name: ems-frontend
     env: static
     rootDir: frontend
-    buildCommand: npm install --legacy-peer-deps && npm run build
+    buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     envVars:
       - key: VITE_GOOGLE_CLIENT_ID
