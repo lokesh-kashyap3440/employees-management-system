@@ -48,8 +48,3 @@ services:
     envVars:
       - key: VITE_GOOGLE_CLIENT_ID
         sync: false # User must enter this in Render Dashboard
-      - key: VITE_API_URL
-        fromService:
-          type: web
-          name: ems-backend
-          property: host

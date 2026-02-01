@@ -6,17 +6,17 @@ import type { Employee, CreateEmployeeRequest, UpdateEmployeeRequest } from '../
 const isAndroid = window.location.href.includes('capacitor://') || 
                   (window.location.hostname === 'localhost' && /Android/i.test(navigator.userAgent));
 
-const PROD_URL = 'https://ts-mongo-oidc-backend.onrender.com';
+// Try to get backend URL from window.location or fallback
+const currentDomain = window.location.hostname;
+const defaultProdUrl = currentDomain.includes('onrender.com') 
+  ? `https://${currentDomain.replace('frontend', 'backend')}`
+  : 'https://ems-backend.onrender.com';
+
 const EMULATOR_URL = 'http://10.0.2.2:3000';
 
-// Logic:
-// 1. If explicit env var exists, use it.
-// 2. If we detect Android Emulator, use 10.0.2.2.
-// 3. If we are on desktop localhost, use localhost.
-// 4. Otherwise, use Production.
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 
                      (isAndroid ? EMULATOR_URL : 
-                     (window.location.hostname === 'localhost' ? 'http://localhost:3000' : PROD_URL));
+                     (window.location.hostname === 'localhost' ? 'http://localhost:3000' : defaultProdUrl));
 
 console.log('App environment:', { isAndroid, hostname: window.location.hostname });
 console.log('API_BASE_URL:', API_BASE_URL);

@@ -19,8 +19,8 @@ async function startServer() {
 
     await connectRedis();
 
-    httpServer.listen(port, '0.0.0.0', () => {
-      console.log(`🚀 Server listening on all interfaces at port ${port}`);
+    httpServer.listen(port, () => {
+      console.log(`🚀 Server listening on port ${port}`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);
