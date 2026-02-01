@@ -43,7 +43,12 @@ In this session, we integrated Redis into the `ts-mongo-oidc` application to ena
     *   **Component Fixes**: Updated `AuthForm.tsx` with proper accessibility labels (`htmlFor`) to fix test failures and improve UX.
     *   **Store Mocking**: Updated `Header.test.tsx` to include the new `notification` slice in its test store setup.
 
-8.  **Bug Fixes**:
+8.  **Code Coverage**:
+    *   **Backend**: Configured Jest to generate coverage reports using `--coverage`. Updated `jest.config.js` to collect coverage from `src/**/*.ts` while excluding tests, mocks, and entry points.
+    *   **Frontend**: Installed `@vitest/coverage-v8` and configured Vitest in `vite.config.ts` to generate coverage reports.
+    *   **Usage**: Both applications now support `npm run test:coverage` to generate detailed reports.
+
+9.  **Bug Fixes**:
     *   **`backend/src/test-setup.ts`**: Fixed a module path resolution error for `db.ts` that was causing tests to fail.
 
 ### Frontend Changes

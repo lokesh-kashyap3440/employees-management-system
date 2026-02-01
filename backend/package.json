@@ -7,7 +7,8 @@
     "dev": "ts-node src/server.ts",
     "build": "esbuild src/server.ts --bundle --platform=node --format=esm --outdir=dist --packages=external",
     "start": "node dist/server.js",
-    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest"
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:coverage": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage"
   },
   "keywords": [],
   "author": "",
