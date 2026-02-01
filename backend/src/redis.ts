@@ -105,8 +105,10 @@ export const deletePattern = async (pattern: string) => {
     await connectRedis();
     if (!client.isOpen) return;
     const keys = await client.keys(pattern);
+    console.log(`🧹 Found ${keys.length} keys matching pattern "${pattern}"`);
     if (keys.length > 0) {
       await client.del(keys);
+      console.log(`🗑️ Deleted keys: ${keys.join(', ')}`);
     }
   } catch (error) {
     console.error(`Error deleting keys with pattern ${pattern}:`, error);

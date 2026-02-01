@@ -24,13 +24,14 @@ function AppContent() {
 
   useEffect(() => {
     if (isAuthenticated) {
+      console.log('🔌 Initializing Socket.io connection...', { role, user });
       const socket = io(API_BASE_URL, {
         transports: ['websocket', 'polling'],
         withCredentials: true
       });
 
       socket.on('connect', () => {
-        console.log('🔌 Connected to Socket.io');
+        console.log('🔌 Connected to Socket.io with ID:', socket.id);
         if (role === 'admin') {
           console.log('👑 Joining admin room...');
           socket.emit('join-admin');
@@ -38,9 +39,14 @@ function AppContent() {
       });
 
       socket.on('notification', (data) => {
+        console.log('🔔 Notification received:', data);
         dispatch(addNotification(data));
-        // Refresh employee list when a notification is received
-        dispatch(fetchEmployees());
+        
+        console.log('🔄 Refreshing employee list...');
+        dispatch(fetchEmployees())
+          .unwrap()
+          .then(() => console.log('✅ Employee list refreshed'))
+          .catch((err) => console.error('❌ Failed to refresh list:', err));
         
         toast.custom((t) => (
           <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-2xl rounded-[2rem] pointer-events-auto flex ring-1 ring-black ring-opacity-5 border border-blue-50`}>
@@ -70,10 +76,11 @@ function AppContent() {
       });
 
       return () => {
+        console.log('🔌 Disconnecting Socket.io...');
         socket.disconnect();
       };
     }
-  }, [isAuthenticated, user, dispatch]);
+  }, [isAuthenticated, user, role, dispatch]);
 
   const handleAdd = () => {
     setEditingEmployee(null);
