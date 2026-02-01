@@ -36,6 +36,12 @@ This project is a monorepo containing:
 - **Persistent Notifications**: Admin notifications are stored in Redis and persist across server restarts.
 - **Live Sync**: Silent background synchronization for all users.
 
+### 🤖 Smart Chatbot Assistant
+- **Natural Language Queries**: Query employees using conversational phrases (e.g., "Who earns more than 60k?").
+- **Superlatives & Ranges**: Supports "highest salary", "lowest salary", and range queries like "between 50k and 100k".
+- **Specific Attribute Requests**: Ask targeted questions like "What is Ramesh's department?".
+- **Role-Based Privacy**: Securely filters results based on user roles.
+
 ---
 
 ## 🚀 Getting Started Locally
@@ -46,7 +52,14 @@ This project is a monorepo containing:
 - Redis (Running locally)
 - Google Cloud Project (for Client ID)
 
-### 1. Clone & Install
+---
+
+## 📝 Session Documentation
+For a detailed history of changes and learnings from recent development sessions, see [gemini.md](./gemini.md).
+
+---
+
+## 1. Clone & Install
 ```bash
 git clone <repository-url>
 cd ts-mongo-oidc
