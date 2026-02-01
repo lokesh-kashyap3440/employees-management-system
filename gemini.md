@@ -62,7 +62,7 @@ In this session, we integrated Redis into the `ts-mongo-oidc` application to ena
     *   **Usage**: Both applications now support `npm run test:coverage` to generate detailed reports.
 
 9.  **Developer Experience**:
-    *   **Backend**: Switched the `dev` command to use `ts-node-dev` with `--respawn`, `--transpile-only`, and `--esm` flags. The `--esm` flag is required to properly load the server as an ES Module, resolving "Must use import to load ES Module" errors.
+    *   **Backend**: Switched the `dev` command to use `tsx watch`. `tsx` provides superior, native-feeling support for ES Modules and TypeScript compared to `ts-node-dev`, resolving loading issues and providing a more reliable watch mode.
 
 10. **Bug Fixes**:
     *   **`backend/src/test-setup.ts`**: Fixed a module path resolution error for `db.ts` that was causing tests to fail.

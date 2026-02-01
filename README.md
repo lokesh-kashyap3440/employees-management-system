@@ -161,5 +161,5 @@ cd frontend && npm run test:coverage
 | Component | Technologies |
 |-----------|--------------|
 | **Frontend** | React 19, Vite, Redux Toolkit, Tailwind CSS, Framer Motion, Socket.io Client |
-| **Backend** | Node.js, Express, TypeScript, MongoDB, Redis, Socket.io, Google Auth Library |
+| **Backend** | Node.js, Express, TypeScript, MongoDB, Redis, Socket.io, tsx (Dev), Google Auth Library |
 | **DevOps** | Render (Blueprints), Docker, Swagger |
