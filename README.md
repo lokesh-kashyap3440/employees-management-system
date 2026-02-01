@@ -111,6 +111,36 @@ This project includes a `render.yaml` Blueprint for one-click deployment includi
     *   `GOOGLE_CLIENT_ID`: Your GCP Client ID.
 6.  **Deploy!**
 
+## 📚 API Documentation
+
+When the backend is running, full Swagger documentation is available at:
+`http://localhost:3000/api-docs`
+
+---
+
+## 🧪 Testing & Code Coverage
+
+The project includes a comprehensive testing suite with code coverage reporting.
+
+### Running Tests
+```bash
+# Backend
+cd backend && npm test
+
+# Frontend
+cd frontend && npm test
+```
+
+### Generating Coverage Reports
+Detailed reports are generated in the `coverage/` directory of each service.
+```bash
+# Backend
+cd backend && npm run test:coverage
+
+# Frontend
+cd frontend && npm run test:coverage
+```
+
 ---
 
 ## 🛠 Tech Stack
