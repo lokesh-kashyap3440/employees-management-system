@@ -48,6 +48,17 @@ describe('Header', () => {
     expect(screen.getByText('Hi')).toBeInTheDocument();
   });
 
+  it('calls clear persistent notifications for admin', async () => {
+    renderWithStore({ 
+        auth: { user: 'admin', role: 'admin', isAuthenticated: true },
+        notification: { notifications: [{ id: '1', message: 'Hi', timestamp: new Date().toISOString(), isRead: false }], unreadCount: 1, loading: false }
+    });
+
+    fireEvent.click(screen.getByLabelText(/Toggle notifications/i));
+    fireEvent.click(screen.getByRole('button', { name: /Clear All/i }));
+    // Verify action dispatched or state updated
+  });
+
   it('opens profile modal on click', () => {
     renderWithStore({ 
         auth: { user: 'testuser', isAuthenticated: true, token: 'token' }

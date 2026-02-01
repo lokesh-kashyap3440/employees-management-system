@@ -30,6 +30,13 @@ describe('API Services', () => {
     expect(res.accessToken).toBe('t');
   });
 
+  it('authApi.googleLogin should call axios.post', async () => {
+    (axios.post as any).mockResolvedValue({ data: { accessToken: 'g' } });
+    const res = await authApi.googleLogin('id-token');
+    expect(axios.post).toHaveBeenCalledWith('/auth/google', { idToken: 'id-token' });
+    expect(res.accessToken).toBe('g');
+  });
+
   it('employeeApi.getAll should call axios.get', async () => {
     (axios.get as any).mockResolvedValue({ data: [] });
     await employeeApi.getAll();

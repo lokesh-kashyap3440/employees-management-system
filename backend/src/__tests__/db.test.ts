@@ -23,6 +23,9 @@ describe('Database Utilities', () => {
   it('should connect to database', async () => {
     await connectToDatabase('mongodb://uri');
     expect(mockConnect).toHaveBeenCalled();
+    // Call again to hit the 'if (db) return db' branch
+    await connectToDatabase('mongodb://uri');
+    expect(mockConnect).toHaveBeenCalledTimes(1);
   });
 
   it('should return database instance', async () => {

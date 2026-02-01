@@ -105,6 +105,15 @@ describe('notificationSlice', () => {
       expect(state.notifications[0].message).toBe('Test 1');
     });
 
+    it('should handle fetchNotifications.fulfilled with missing id/timestamp', async () => {
+        const mockData = [{ message: 'No ID' }];
+        (notificationApi.getAll as any).mockResolvedValue(mockData);
+        await store.dispatch(fetchNotifications());
+        const state = store.getState().notification;
+        expect(state.notifications[0].id).toBeDefined();
+        expect(state.notifications[0].timestamp).toBeDefined();
+    });
+
     it('should handle fetchNotifications.rejected', async () => {
       (notificationApi.getAll as any).mockRejectedValue(new Error('Failed'));
 

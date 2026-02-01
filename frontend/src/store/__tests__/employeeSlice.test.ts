@@ -76,5 +76,33 @@ describe('employeeSlice', () => {
         await store.dispatch(fetchEmployees());
         expect(store.getState().employee.error).toBe('failed');
     });
+
+    it('createEmployee.rejected', async () => {
+        (employeeApi.create as any).mockRejectedValue({ response: { data: { error: 'c fail' } } });
+        await store.dispatch(createEmployee({ name: 'N' }));
+        expect(store.getState().employee.error).toBe('c fail');
+    });
+
+    it('updateEmployee.rejected', async () => {
+        (employeeApi.update as any).mockRejectedValue({ response: { data: { error: 'u fail' } } });
+        await store.dispatch(updateEmployee({ id: '1', employee: { name: 'U' } }));
+        expect(store.getState().employee.error).toBe('u fail');
+    });
+
+    it('deleteEmployee.rejected', async () => {
+        (employeeApi.delete as any).mockRejectedValue({ response: { data: { error: 'd fail' } } });
+        await store.dispatch(deleteEmployee('1'));
+        expect(store.getState().employee.error).toBe('d fail');
+    });
+
+    it('should set loading true on fetchEmployees.pending', () => {
+        const state = employeeReducer(undefined, { type: fetchEmployees.pending.type });
+        expect(state.loading).toBe(true);
+    });
+
+    it('should set loading true on createEmployee.pending', () => {
+        const state = employeeReducer(undefined, { type: createEmployee.pending.type });
+        expect(state.loading).toBe(true);
+    });
   });
 });

@@ -1,5 +1,5 @@
+import type { LoginRequest, AuthResponse, RegisterRequest } from '../types/auth';
 import type { Employee, CreateEmployeeRequest, UpdateEmployeeRequest } from '../types/employee';
-import type { LoginRequest, RegisterRequest, AuthResponse } from '../types/auth';
 export declare const API_BASE_URL: any;
 export declare const authApi: {
     login: (credentials: LoginRequest) => Promise<AuthResponse>;

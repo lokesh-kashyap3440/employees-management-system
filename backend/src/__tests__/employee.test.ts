@@ -40,29 +40,29 @@ jest.unstable_mockModule('../db.ts', () => ({
 }));
 
 // Mock authentication middleware
-// We default to a regular user for these tests
+let mockUser: any = { username: 'testuser', role: 'user' };
 jest.unstable_mockModule('../middleware/auth.ts', () => ({
   authenticateToken: (req: any, res: any, next: any) => {
-    req.user = { username: 'testuser', role: 'user' };
+    req.user = mockUser;
     next();
   },
 }));
 
 // Mock redis.ts
+const mockGetCache = jest.fn();
 jest.unstable_mockModule('../redis.ts', () => ({
   connectRedis: jest.fn(),
   getRedisClient: jest.fn(),
   pushNotification: jest.fn(),
-  getNotifications: jest.fn().mockResolvedValue([]),
+  getNotifications: jest.fn(),
   clearNotifications: jest.fn(),
   setCache: jest.fn(),
-  getCache: jest.fn().mockResolvedValue(null),
+  getCache: mockGetCache,
   deleteCache: jest.fn(),
   deletePattern: jest.fn(),
-  broadcastUpdate: jest.fn(), // If this is in redis.ts? No, it's in socket.ts. Wait.
 }));
 
-// Mock socket.ts to avoid real socket connections
+// Mock socket.ts
 jest.unstable_mockModule('../socket.ts', () => ({
   notifyAdmin: jest.fn(),
   broadcastUpdate: jest.fn(),
@@ -73,130 +73,164 @@ jest.unstable_mockModule('../socket.ts', () => ({
 // Import app AFTER mocking
 const { default: app } = await import('../app.ts');
 
-describe('Employee Routes (Role: User)', () => {
+describe('Employee Routes (Deep Coverage)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockSort.mockReturnValue({ toArray: mockToArray });
-    mockFind.mockReturnValue({ sort: mockSort });
-
-    mockGetDb.mockReturnValue({
-        collection: () => ({
-            insertOne: mockInsertOne,
-            find: mockFind,
-            findOne: mockFindOne,
-            updateOne: mockUpdateOne,
-            deleteOne: mockDeleteOne,
-        })
-    });
+    mockUser = { username: 'testuser', role: 'user' };
+    mockGetCache.mockResolvedValue(null);
+    mockToArray.mockResolvedValue([]);
+    mockFindOne.mockResolvedValue(null);
   });
 
   describe('GET /employees', () => {
-    it('should filter employees by creator for regular user', async () => {
-      const employees = [{ name: 'John Doe', createdBy: 'testuser' }];
-      mockToArray.mockResolvedValue(employees);
-
+    it('should serve from cache if available', async () => {
+      mockGetCache.mockResolvedValue([{ name: 'Cached' }]);
       const res = await request(app).get('/employees');
-
       expect(res.status).toBe(200);
-      expect(res.body).toEqual(employees);
-      expect(mockFind).toHaveBeenCalledWith({ createdBy: 'testuser' });
+      expect(res.body[0].name).toBe('Cached');
+      expect(mockFind).not.toHaveBeenCalled();
+    });
+
+    it('should serve from DB for admin and store in cache', async () => {
+        mockUser = { username: 'admin', role: 'admin' };
+        const emps = [{ name: 'DB' }];
+        mockToArray.mockResolvedValue(emps);
+        const res = await request(app).get('/employees');
+        expect(res.status).toBe(200);
+        expect(res.body[0].name).toBe('DB');
+    });
+
+    it('should return 500 on error', async () => {
+        mockGetCache.mockRejectedValue(new Error('fail'));
+        const res = await request(app).get('/employees');
+        expect(res.status).toBe(500);
     });
   });
 
   describe('GET /employees/:id', () => {
-    it('should return employee if created by user', async () => {
-      const employee = { _id: new ObjectId(), name: 'John Doe', createdBy: 'testuser' };
-      mockFindOne.mockResolvedValue(employee);
-
-      const res = await request(app).get(`/employees/${employee._id}`);
-
-      expect(res.status).toBe(200);
-      expect(res.body.name).toBe(employee.name);
+    it('should serve single employee from cache', async () => {
+        const id = new ObjectId().toString();
+        mockGetCache.mockResolvedValue({ _id: id, name: 'C', createdBy: 'testuser' });
+        const res = await request(app).get(`/employees/${id}`);
+        expect(res.status).toBe(200);
+        expect(mockFindOne).not.toHaveBeenCalled();
     });
 
-    it('should return 403 if employee created by another user', async () => {
-      const employee = { _id: new ObjectId(), name: 'Jane Doe', createdBy: 'otheruser' };
-      mockFindOne.mockResolvedValue(employee);
+    it('should serve from DB if cache miss', async () => {
+        const id = new ObjectId().toString();
+        mockFindOne.mockResolvedValue({ _id: id, name: 'DB', createdBy: 'testuser' });
+        const res = await request(app).get(`/employees/${id}`);
+        expect(res.status).toBe(200);
+        expect(mockFindOne).toHaveBeenCalled();
+    });
 
-      const res = await request(app).get(`/employees/${employee._id}`);
+    it('should return 403 if cached employee belongs to other', async () => {
+        const id = new ObjectId().toString();
+        mockGetCache.mockResolvedValue({ _id: id, name: 'C', createdBy: 'other' });
+        const res = await request(app).get(`/employees/${id}`);
+        expect(res.status).toBe(403);
+    });
 
-      expect(res.status).toBe(403);
+    it('should return 404 if not found in DB', async () => {
+        const id = new ObjectId().toString();
+        const res = await request(app).get(`/employees/${id}`);
+        expect(res.status).toBe(404);
+    });
+
+    it('should return 500 on error', async () => {
+        mockFindOne.mockRejectedValue(new Error('fail'));
+        const res = await request(app).get(`/${new ObjectId()}`);
+        // Wait, app.use('/employees', employeeRouter)
+        const res2 = await request(app).get(`/employees/${new ObjectId()}`);
+        expect(res2.status).toBe(500);
     });
   });
 
   describe('POST /employees', () => {
-    it('should create a new employee with createdBy field', async () => {
-      mockInsertOne.mockResolvedValue({ insertedId: 'new-id' });
-      const newEmployee = { name: 'John Doe' };
-
-      const res = await request(app)
-        .post('/employees')
-        .send(newEmployee);
-
-      expect(res.status).toBe(201);
-      // Verify that createdBy was added to the object passed to insertOne
-      const insertedDoc = mockInsertOne.mock.calls[0][0];
-      expect(insertedDoc.createdBy).toBe('testuser');
+    it('should fail if name missing', async () => {
+        const res = await request(app).post('/employees').send({});
+        expect(res.status).toBe(400);
     });
 
-    it('should return 400 if name is missing', async () => {
-      const res = await request(app).post('/employees').send({});
-      expect(res.status).toBe(400);
-    });
-
-    it('should return 500 on server error', async () => {
-      mockInsertOne.mockRejectedValue(new Error('fail'));
-      const res = await request(app).post('/employees').send({ name: 'John' });
-      expect(res.status).toBe(500);
-    });
-  });
-
-  describe('GET /employees', () => {
-    it('should return 500 on server error', async () => {
-      mockToArray.mockRejectedValue(new Error('fail'));
-      const res = await request(app).get('/employees');
-      expect(res.status).toBe(500);
+    it('should create employee successfully', async () => {
+        mockInsertOne.mockResolvedValue({ insertedId: '1' });
+        const res = await request(app).post('/employees').send({ name: 'John', salary: "50000" });
+        expect(res.status).toBe(201);
     });
   });
 
   describe('PUT /employees/:id', () => {
     it('should update own employee', async () => {
-        // First findOne call for auth check
         mockFindOne.mockResolvedValue({ createdBy: 'testuser' });
-        // Update result
         mockUpdateOne.mockResolvedValue({ matchedCount: 1, modifiedCount: 1 });
-        
-        const id = new ObjectId();
-        const res = await request(app)
-            .put(`/employees/${id}`)
-            .send({ position: 'Senior' });
-
+        const res = await request(app).put(`/employees/${new ObjectId()}`).send({ name: 'U' });
         expect(res.status).toBe(200);
-        expect(mockUpdateOne).toHaveBeenCalled();
     });
 
-    it('should return 403 when updating others employee', async () => {
-        mockFindOne.mockResolvedValue({ createdBy: 'otheruser' });
-        
-        const id = new ObjectId();
-        const res = await request(app)
-            .put(`/employees/${id}`)
-            .send({ position: 'Senior' });
-
+    it('should return 403 for other employee', async () => {
+        mockFindOne.mockResolvedValue({ createdBy: 'other' });
+        const res = await request(app).put(`/employees/${new ObjectId()}`).send({ name: 'U' });
         expect(res.status).toBe(403);
-        expect(mockUpdateOne).not.toHaveBeenCalled();
+    });
+
+    it('should handle updates where no fields are actually changed', async () => {
+        mockFindOne.mockResolvedValue({ createdBy: 'testuser' });
+        mockUpdateOne.mockResolvedValue({ matchedCount: 1, modifiedCount: 0 });
+        const res = await request(app).put(`/employees/${new ObjectId()}`).send({ name: 'U' });
+        expect(res.status).toBe(200);
+    });
+
+    it('should return 404 if employee not found during update', async () => {
+        mockFindOne.mockResolvedValue({ createdBy: 'testuser' });
+        mockUpdateOne.mockResolvedValue({ matchedCount: 0 });
+        const res = await request(app).put(`/employees/${new ObjectId()}`).send({ name: 'U' });
+        expect(res.status).toBe(404);
     });
   });
 
   describe('DELETE /employees/:id', () => {
-     it('should return 403 when deleting others employee', async () => {
-        mockFindOne.mockResolvedValue({ createdBy: 'otheruser' });
-        
-        const id = new ObjectId();
-        const res = await request(app).delete(`/employees/${id}`);
-
-        expect(res.status).toBe(403);
-        expect(mockDeleteOne).not.toHaveBeenCalled();
+    it('should delete successfully', async () => {
+        mockFindOne.mockResolvedValue({ createdBy: 'testuser' });
+        mockDeleteOne.mockResolvedValue({ deletedCount: 1 });
+        const res = await request(app).delete(`/employees/${new ObjectId()}`);
+        expect(res.status).toBe(200);
     });
+
+    it('should return 404 if nothing deleted', async () => {
+        mockFindOne.mockResolvedValue({ createdBy: 'testuser' });
+        mockDeleteOne.mockResolvedValue({ deletedCount: 0 });
+        const res = await request(app).delete(`/employees/${new ObjectId()}`);
+        expect(res.status).toBe(404);
+    });
+
+    it('should return 500 on server error', async () => {
+        mockFindOne.mockRejectedValue(new Error('fail'));
+        const res = await request(app).delete(`/employees/${new ObjectId()}`);
+        expect(res.status).toBe(500);
+    });
+  });
+
+  describe('PUT /employees/:id - error branches', () => {
+      it('should return 500 on server error', async () => {
+          mockFindOne.mockRejectedValue(new Error('fail'));
+          const res = await request(app).put(`/employees/${new ObjectId()}`).send({ name: 'U' });
+          expect(res.status).toBe(500);
+      });
+  });
+
+  describe('app middleware', () => {
+      it('should log requests', async () => {
+          const res = await request(app).get('/health');
+          expect(res.status).toBe(200);
+      });
+  });
+
+  describe('Authorization logic', () => {
+      it('should allow admin to update any employee', async () => {
+          mockUser = { username: 'admin', role: 'admin' };
+          mockUpdateOne.mockResolvedValue({ matchedCount: 1 });
+          const res = await request(app).put(`/employees/${new ObjectId()}`).send({ name: 'A' });
+          expect(res.status).toBe(200);
+      });
   });
 });

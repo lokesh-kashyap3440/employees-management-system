@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { AuthForm } from '../components/AuthForm';
 import { authApi } from '../services/api';
 import { setCredentials } from '../store/authSlice';
 import { GoogleLogin } from '@react-oauth/google';
+import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
+import { Capacitor } from '@capacitor/core';
 
 interface LoginPageProps {
   onLoginSuccess: () => void;
@@ -13,7 +15,15 @@ interface LoginPageProps {
 export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onNavigateToRegister }) => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isNative, setIsNative] = useState(false);
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    setIsNative(Capacitor.isNativePlatform());
+    if (Capacitor.isNativePlatform()) {
+        GoogleAuth.initialize();
+    }
+  }, []);
 
   const handleLogin = async (data: { username: string; password?: string }) => {
     setIsLoading(true);
@@ -33,29 +43,40 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onNavigate
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse: any) => {
-    console.log('Google Login Success:', credentialResponse); // Debug log
+  const processGoogleLogin = async (idToken: string, email: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      console.log('Sending Google credential to backend...'); // Debug log
-      const response = await authApi.googleLogin(credentialResponse.credential);
-      console.log('Backend response:', response); // Debug log
-      
-      // For Google login, we use the email as the username
-      const decodedToken = JSON.parse(atob(credentialResponse.credential.split('.')[1]));
+      const response = await authApi.googleLogin(idToken);
       dispatch(setCredentials({ 
-        user: decodedToken.email, 
+        user: email, 
         token: response.accessToken,
         role: response.role 
       }));
       onLoginSuccess();
     } catch (err: any) {
-      console.error('Google Login Error:', err); // Debug log
+      console.error('Google Login Error:', err);
       setError(err.response?.data || 'Google Login failed');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleNativeGoogleLogin = async () => {
+    try {
+      const user = await GoogleAuth.signIn();
+      if (user.authentication.idToken) {
+        await processGoogleLogin(user.authentication.idToken, user.email);
+      }
+    } catch (err: any) {
+      console.error('Native Google Login Error:', err);
+      setError('Native Google Login Failed');
+    }
+  };
+
+  const handleWebGoogleSuccess = async (credentialResponse: any) => {
+    const decodedToken = JSON.parse(atob(credentialResponse.credential.split('.')[1]));
+    await processGoogleLogin(credentialResponse.credential, decodedToken.email);
   };
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -74,6 +95,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onNavigate
           <p><strong>Debug Info:</strong></p>
           <p>API: {API_URL}</p>
           <p>Client ID: {CLIENT_ID ? 'Set ✅' : 'Missing ❌'}</p>
+          <p>Platform: {isNative ? 'Native 📱' : 'Web 🌐'}</p>
         </div>
       )}
       <div className="flex flex-col gap-4 mt-4">
@@ -86,17 +108,27 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onNavigate
           </div>
         </div>
 
-        <div className="flex justify-center">
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={() => {
-              console.error('Google Login Component Error'); // Debug log
-              setError('Google Login Failed');
-            }}
-            useOneTap
-            theme="filled_blue"
-            shape="pill"
-          />
+        <div className="flex justify-center min-h-[44px]">
+          {isNative ? (
+            <button
+              onClick={handleNativeGoogleLogin}
+              className="flex items-center gap-3 px-6 py-2 bg-white border border-gray-300 rounded-full shadow-sm hover:bg-gray-50 transition-colors"
+            >
+              <img src="https://www.gstatic.com/firebase/anonymous-logos/google.png" alt="Google" className="w-5 h-5" />
+              <span className="text-sm font-semibold text-gray-700">Sign in with Google</span>
+            </button>
+          ) : (
+            <GoogleLogin
+              onSuccess={handleWebGoogleSuccess}
+              onError={() => {
+                console.error('Google Login Component Error');
+                setError('Google Login Failed');
+              }}
+              useOneTap={false}
+              theme="filled_blue"
+              shape="pill"
+            />
+          )}
         </div>
 
         <div className="text-center mt-2">

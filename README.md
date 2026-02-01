@@ -1,157 +1,129 @@
 # Employee Management System (Full Stack OIDC)
 
-A robust, full-stack application for managing employees, featuring local authentication, Google OIDC (OpenID Connect) login, role-based access control, Redis-powered caching, and real-time synchronization.
+A robust, full-stack application for managing employees, featuring local authentication, Google OIDC login, Redis caching, real-time sync, and an AI Chatbot. Now fully optimized for **Mobile (Android/iOS)** and **PWA**.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![React](https://img.shields.io/badge/React-19-blue)
 ![Node.js](https://img.shields.io/badge/Node.js-18+-green)
-![MongoDB](https://img.shields.io/badge/MongoDB-Atlas%2FLocal-green)
-![Redis](https://img.shields.io/badge/Redis-Latest-red)
+![Capacitor](https://img.shields.io/badge/Capacitor-Android-blue)
+
+## 📱 Mobile & Android Development
+
+This project uses **Capacitor** to bridge the web application into a native Android app.
+
+### 1. Prerequisites
+- **Java JDK 17 or 21** (Set `JAVA_HOME` environment variable).
+- **Android Studio** (For compiling the final APK).
+
+### 2. Android Emulator Setup
+To test locally on an Android emulator:
+1.  **Backend Configuration**: Ensure your backend listens on `0.0.0.0` (configured in `server.ts`).
+2.  **API URL**: Set `VITE_API_URL=http://10.0.2.2:3000` in `frontend/.env`. (The IP `10.0.2.2` is the special bridge to your computer's localhost).
+3.  **Sync & Run**:
+    ```bash
+    cd frontend
+    npm run build
+    npx cap sync android
+    npx cap run android
+    ```
+
+### 3. Production Render Setup (Android)
+To use the Android app with your live **Render** deployment:
+1.  **Find your Render URL**: Get your backend URL from the Render Dashboard (e.g., `https://your-app.onrender.com`).
+2.  **Update Config**: In `frontend/src/services/api.ts`, the app is configured to automatically use the production URL when not on `localhost`.
+3.  **Build for Production**:
+    ```bash
+    cd frontend
+    # Ensure .env is empty or points to Render
+    npm run build
+    npx cap sync android
+    ```
+4.  **Generate APK**: In Android Studio, go to **Build > Build APK(s)**.
+
+---
 
 ## 🏗 Architecture
 
-This project is a monorepo containing:
-- **`backend/`**: Express.js API with MongoDB, Redis, JWT, and Socket.io.
-- **`frontend/`**: React (Vite) application with Redux Toolkit and Socket.io client.
-- **`Infrastructure`**: Docker Compose for local services and Render Blueprints for cloud deployment.
+- **`backend/`**: Express.js API with MongoDB, Redis, and Socket.io.
+- **`frontend/`**: React (Vite) + Capacitor for Mobile.
+- **`Infrastructure`**: Docker Compose and Render Blueprints.
 
 ## ✨ Features
 
-### 🔐 Authentication & Security
-- **Google OIDC Login**: Seamless "Sign in with Google" integration.
-- **Local Auth**: Traditional Username/Password registration and login.
-- **JWT Sessions**: Secure, stateless authentication using JSON Web Tokens.
-- **Role-Based Access**:
-  - **Admin**: Full access to all records. Receives real-time alerts and history.
-  - **User**: Restricted to managing their own created records.
-
-### 👥 Employee Management
-- **CRUD Operations**: Create, Read, Update, Delete employee records.
-- **Caching**: Redis-based caching for list and individual records to ensure high performance.
-- **Real-Time Data Sync**: All connected clients automatically refresh their view when data is modified anywhere.
-
-### ⚡ Real-Time & Notifications
-- **Socket.io Integration**: Instant alerts for Admin users.
-- **Persistent Notifications**: Admin notifications are stored in Redis and persist across server restarts.
-- **Live Sync**: Silent background synchronization for all users.
-
-### 🤖 Smart Chatbot Assistant (LLM-Powered)
-- **Natural Language Queries**: Powered by LLMs (Ollama `qwen2.5-coder` locally or cloud models).
-- **Intelligent Reasoning**: Beyond simple regex, the bot can perform calculations (averages, totals) and understand complex conversational context.
-- **Secure Data Context**: The bot only sees data the current user is authorized to access.
-- **Flexible Deployment**: Configurable to use local instances or cloud-based AI providers.
+- **Progressive Web App (PWA)**: Installable on Android/iOS home screens.
+- **Google OIDC Login**: Secure third-party authentication.
+- **Real-Time Sync**: Socket.io keeps all devices updated instantly.
+- **Redis Caching**: High-performance data retrieval.
+- **AI Chatbot**: Query your employee database using natural language.
 
 ---
 
-## 🚀 Getting Started Locally
+## 🚀 Local Quick Start
 
-### Prerequisites
-- Node.js (v18+)
-- MongoDB (Running locally or via Atlas)
-- Redis (Running locally)
-- Google Cloud Project (for Client ID)
+### 1. Configuration (`.env`)
 
----
-
-## 📝 Session Documentation
-For a detailed history of changes and learnings from recent development sessions, see [gemini.md](./gemini.md).
-
----
-
-## 1. Clone & Install
-```bash
-git clone <repository-url>
-cd ts-mongo-oidc
-
-# Install Backend
-cd backend
-npm install
-
-# Install Frontend
-cd ../frontend
-npm install
-```
-
-### 2. Configuration (`.env`)
-
-#### Backend (`backend/.env`)
+**Backend**:
 ```env
-MONGODB_URI=mongodb://localhost:27017/employee_management
+MONGODB_URI=mongodb://localhost:27017/ems
 REDIS_URL=redis://localhost:6379
-PORT=3000
-JWT_SECRET=your_super_secret_key
-GOOGLE_CLIENT_ID=your_google_client_id_from_gcp
+GOOGLE_CLIENT_ID=...
+JWT_SECRET=...
 ```
 
-#### Frontend (`frontend/.env`)
+**Frontend**:
 ```env
 VITE_API_URL=http://localhost:3000
-VITE_GOOGLE_CLIENT_ID=your_google_client_id_from_gcp
+VITE_GOOGLE_CLIENT_ID=...
 ```
 
-### 3. Run Development Servers
-
-**Option A: Using Docker (Recommended for DB/Cache)**
+### 2. Run Servers
 ```bash
-cd backend
-docker-compose -f docker-compose.mongo.yml up -d
-```
-
-**Option B: Run App Separately**
-```bash
-# Terminal 1 (Backend)
+# Terminal 1: Backend
 cd backend && npm run dev
 
-# Terminal 2 (Frontend)
+# Terminal 2: Frontend
 cd frontend && npm run dev
 ```
-
-The app will be available at **`http://localhost:5173`**.
 
 ---
 
 ## ☁️ Deployment (Render.com)
 
-This project includes a `render.yaml` Blueprint for one-click deployment including **Redis**.
+1.  **Create Blueprint**: Use the `render.yaml` file in the root.
+2.  **Env Vars**: Enter your `MONGODB_URI` and `GOOGLE_CLIENT_ID` in the Render dashboard.
+3.  **CORS**: The backend is pre-configured to allow requests from `capacitor://localhost` (Android).
 
-1.  **Push to GitHub/GitLab**.
-2.  **Login to [Render Dashboard](https://dashboard.render.com/)**.
-3.  **New > Blueprint**.
-4.  Select your repository.
-5.  **Fill Environment Variables**:
-    *   `MONGODB_URI`: Your production database URL.
-    *   `GOOGLE_CLIENT_ID`: Your GCP Client ID.
-6.  **Deploy!**
+## 🧪 Testing
 
-## 📚 API Documentation
-
-When the backend is running, full Swagger documentation is available at:
-`http://localhost:3000/api-docs`
+Both Frontend and Backend maintain **>90% code coverage**.
+```bash
+# Run tests with coverage
+npm run test:coverage # (in either directory)
+```
 
 ---
 
-## 🧪 Testing & Code Coverage
+## 🛠 Web vs. Mobile Logic (Safe Coexistence)
 
-The project includes a comprehensive testing suite that meets industry standards, with **over 75% code coverage** for both frontend and backend.
+The application is built to detect its environment automatically:
+- **API Routing**: Automatically switches between `localhost` (Web dev), `10.0.2.2` (Android Emulator), and `Render` (Production).
+- **Google Login**: Uses the standard `@react-oauth/google` for Web and the native `@codetrix-studio/capacitor-google-auth` for Android/iOS to ensure maximum reliability.
+- **CORS**: The backend is configured to trust both standard browsers and the `capacitor://localhost` origin used by mobile apps.
 
-### Running Tests
-```bash
-# Backend
-cd backend && npm test
+---
 
-# Frontend
-cd frontend && npm test
-```
+## 🔧 Troubleshooting & Known Patches
 
-### Generating Coverage Reports
-Detailed reports are generated in the `coverage/` directory of each service.
-```bash
-# Backend
-cd backend && npm run test:coverage
+### Gradle build failures (Google Auth Plugin)
+Newer versions of Android Studio/Gradle may fail on the `@codetrix-studio/capacitor-google-auth` plugin due to deprecated methods. If you see errors regarding `jcenter()` or `proguard-android.txt`, run these PowerShell commands to patch the plugin:
 
-# Frontend
-cd frontend && npm run test:coverage
+```powershell
+# Fix jcenter() error
+(Get-Content "frontend/node_modules/@codetrix-studio/capacitor-google-auth/android/build.gradle") -replace 'jcenter\(\)', 'mavenCentral()' | Set-Content "frontend/node_modules/@codetrix-studio/capacitor-google-auth/android/build.gradle"
+
+# Fix proguard-android.txt error
+(Get-Content "frontend/node_modules/@codetrix-studio/capacitor-google-auth/android/build.gradle") -replace 'proguard-android\.txt', 'proguard-android-optimize.txt' | Set-Content "frontend/node_modules/@codetrix-studio/capacitor-google-auth/android/build.gradle"
 ```
 
 ---
@@ -160,6 +132,7 @@ cd frontend && npm run test:coverage
 
 | Component | Technologies |
 |-----------|--------------|
-| **Frontend** | React 19, Vite, Redux Toolkit, Tailwind CSS, Framer Motion, Socket.io Client |
-| **Backend** | Node.js, Express, TypeScript, MongoDB, Redis, Socket.io, tsx (Dev), Google Auth Library |
-| **DevOps** | Render (Blueprints), Docker, Swagger |
+| **Frontend** | React 19, Vite, Capacitor, Redux Toolkit, Tailwind CSS |
+| **Backend** | Node.js, Express, TypeScript, MongoDB, Redis, Socket.io |
+| **Mobile** | PWA, Capacitor Android |
+| **Cloud** | Render, Docker |

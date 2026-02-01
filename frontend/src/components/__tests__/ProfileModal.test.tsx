@@ -1,10 +1,11 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ProfileModal } from '../ProfileModal';
 import authReducer from '../../store/authSlice';
 import { authApi } from '../../services/api';
+import toast from 'react-hot-toast';
 
 vi.mock('../../services/api', () => ({
   authApi: {
@@ -12,8 +13,19 @@ vi.mock('../../services/api', () => ({
   },
 }));
 
+vi.mock('react-hot-toast', () => ({
+    default: {
+        error: vi.fn(),
+        success: vi.fn(),
+    },
+}));
+
 describe('ProfileModal', () => {
   const mockOnClose = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   const renderModal = (user: string) => {
     const store = configureStore({
@@ -30,7 +42,6 @@ describe('ProfileModal', () => {
   it('renders correctly', () => {
     renderModal('JohnDoe');
     expect(screen.getByText('Security')).toBeInTheDocument();
-    // Multiple "Update Password" texts (header and button)
     expect(screen.getAllByText('Update Password').length).toBeGreaterThan(0);
   });
 
@@ -51,6 +62,33 @@ describe('ProfileModal', () => {
         oldPassword: 'old',
         newPassword: 'new',
       });
+      expect(toast.success).toHaveBeenCalledWith('Password changed successfully!');
+      expect(mockOnClose).toHaveBeenCalled();
+    });
+  });
+
+  it('shows error if passwords do not match', async () => {
+    renderModal('JohnDoe');
+    const inputs = screen.getAllByPlaceholderText('••••••••');
+    fireEvent.change(inputs[0], { target: { value: 'old' } });
+    fireEvent.change(inputs[1], { target: { value: 'new' } });
+    fireEvent.change(inputs[2], { target: { value: 'diff' } });
+    fireEvent.click(screen.getByRole('button', { name: /Update Password/i }));
+    expect(toast.error).toHaveBeenCalledWith('New passwords do not match');
+  });
+
+  it('shows error on API failure', async () => {
+    (authApi.changePassword as any).mockRejectedValue({
+        response: { data: 'Invalid old password' }
+    });
+    renderModal('JohnDoe');
+    const inputs = screen.getAllByPlaceholderText('••••••••');
+    fireEvent.change(inputs[0], { target: { value: 'wrong' } });
+    fireEvent.change(inputs[1], { target: { value: 'new' } });
+    fireEvent.change(inputs[2], { target: { value: 'new' } });
+    fireEvent.click(screen.getByRole('button', { name: /Update Password/i }));
+    await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('Invalid old password');
     });
   });
 });

@@ -138,4 +138,18 @@ describe('LLM Chatbot Route (Refined JSON Parsing)', () => {
     expect(res.body.message).toBe('Not a JSON');
     expect(res.body.results).toHaveLength(0);
   });
+
+  it('should handle empty message from LLM', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ choices: [] })
+    });
+
+    const res = await request(app)
+      .post('/chatbot/query')
+      .send({ query: 'any' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe("I've processed your query.");
+  });
 });
