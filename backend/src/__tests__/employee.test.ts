@@ -48,6 +48,28 @@ jest.unstable_mockModule('../middleware/auth.ts', () => ({
   },
 }));
 
+// Mock redis.ts
+jest.unstable_mockModule('../redis.ts', () => ({
+  connectRedis: jest.fn(),
+  getRedisClient: jest.fn(),
+  pushNotification: jest.fn(),
+  getNotifications: jest.fn().mockResolvedValue([]),
+  clearNotifications: jest.fn(),
+  setCache: jest.fn(),
+  getCache: jest.fn().mockResolvedValue(null),
+  deleteCache: jest.fn(),
+  deletePattern: jest.fn(),
+  broadcastUpdate: jest.fn(), // If this is in redis.ts? No, it's in socket.ts. Wait.
+}));
+
+// Mock socket.ts to avoid real socket connections
+jest.unstable_mockModule('../socket.ts', () => ({
+  notifyAdmin: jest.fn(),
+  broadcastUpdate: jest.fn(),
+  initSocket: jest.fn(),
+  getIO: jest.fn(),
+}));
+
 // Import app AFTER mocking
 const { default: app } = await import('../app.ts');
 

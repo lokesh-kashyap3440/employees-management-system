@@ -25,6 +25,27 @@ jest.unstable_mockModule('../db.ts', () => ({
   closeDB: jest.fn(),
 }));
 
+// Mock redis.ts
+jest.unstable_mockModule('../redis.ts', () => ({
+  connectRedis: jest.fn(),
+  getRedisClient: jest.fn(),
+  pushNotification: jest.fn(),
+  getNotifications: jest.fn().mockResolvedValue([]),
+  clearNotifications: jest.fn(),
+  setCache: jest.fn(),
+  getCache: jest.fn().mockResolvedValue(null),
+  deleteCache: jest.fn(),
+  deletePattern: jest.fn(),
+}));
+
+// Mock socket.ts
+jest.unstable_mockModule('../socket.ts', () => ({
+  notifyAdmin: jest.fn(),
+  broadcastUpdate: jest.fn(),
+  initSocket: jest.fn(),
+  getIO: jest.fn(),
+}));
+
 // Import app AFTER mocking
 // Note: We need to use dynamic import for app because static imports are evaluated before code execution
 const { default: app } = await import('../app.ts');

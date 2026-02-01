@@ -33,7 +33,11 @@ In this session, we integrated Redis into the `ts-mongo-oidc` application to ena
     *   **`backend/src/socket.ts`**: Added `broadcastUpdate` to emit a `data_update` event to all clients.
     *   **`backend/src/routes/employee.ts`**: Called `broadcastUpdate` after every Create, Update, or Delete operation to trigger a sync across all connected clients.
 
-6.  **Bug Fixes**:
+6.  **Test Suite Improvements**:
+    *   **`backend/src/__tests__/*.test.ts`**: Implemented `jest.unstable_mockModule` for `redis.ts` and `socket.ts`.
+    *   **Resolution**: This resolved the "open handles" warning in Jest by ensuring that tests do not attempt to establish real Redis or Socket.io connections, which were preventing the test process from exiting gracefully.
+
+7.  **Bug Fixes**:
     *   **`backend/src/test-setup.ts`**: Fixed a module path resolution error for `db.ts` that was causing tests to fail.
 
 ### Frontend Changes
