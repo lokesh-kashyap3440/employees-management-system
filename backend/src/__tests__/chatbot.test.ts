@@ -3,7 +3,13 @@ import request from 'supertest';
 
 // Define mocks
 const mockToArray = jest.fn();
-const mockFind = jest.fn().mockReturnValue({ toArray: mockToArray });
+const mockLimit = jest.fn().mockReturnThis();
+const mockSort = jest.fn().mockReturnThis();
+const mockFind = jest.fn().mockReturnValue({ 
+  sort: mockSort,
+  limit: mockLimit,
+  toArray: mockToArray 
+});
 const mockCollection = jest.fn().mockReturnValue({ find: mockFind });
 const mockGetDb = jest.fn().mockReturnValue({ collection: mockCollection });
 
@@ -63,6 +69,43 @@ describe('Chatbot Route', () => {
     expect(res.body.results).toHaveLength(1);
   });
 
+  it('should filter by salary range (between)', async () => {
+    mockToArray.mockResolvedValue([{ name: 'Mid Range', salary: 150000 }]);
+
+    const res = await request(app)
+      .post('/chatbot/query')
+      .send({ query: 'who earns between 100000 and 200000?' });
+
+    expect(res.status).toBe(200);
+    expect(mockFind).toHaveBeenCalledWith(expect.objectContaining({
+      salary: { $gte: 100000, $lte: 200000 }
+    }));
+  });
+
+  it('should find the highest salary', async () => {
+    mockToArray.mockResolvedValue([{ name: 'CEO', salary: 500000 }]);
+
+    const res = await request(app)
+      .post('/chatbot/query')
+      .send({ query: 'whose salary is the highest?' });
+
+    expect(res.status).toBe(200);
+    expect(mockSort).toHaveBeenCalledWith({ salary: -1, _id: 1 });
+    expect(mockLimit).toHaveBeenCalledWith(1);
+    expect(res.body.message).toContain('highest salary is CEO');
+  });
+
+  it('should answer which department an employee belongs to', async () => {
+    mockToArray.mockResolvedValue([{ name: 'Ramesh', department: 'Sales' }]);
+
+    const res = await request(app)
+      .post('/chatbot/query')
+      .send({ query: 'which department does Ramesh belongs to?' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Ramesh is in the Sales department.');
+  });
+
   it('should filter by department', async () => {
     mockToArray.mockResolvedValue([{ name: 'Engineer', department: 'Engineering' }]);
 
@@ -86,8 +129,22 @@ describe('Chatbot Route', () => {
 
     expect(res.status).toBe(200);
     const calledFilter = mockFind.mock.calls[0][0] as any;
+    // For single word 'John', it uses $or
     expect(calledFilter.$or).toBeDefined();
-    expect(calledFilter.$or).toHaveLength(3); // name, dept, pos
+    expect(calledFilter.$or).toHaveLength(3); 
+  });
+
+  it('should perform multi-term search using $and', async () => {
+    mockToArray.mockResolvedValue([{ name: 'John Doe', department: 'Engineering' }]);
+
+    const res = await request(app)
+      .post('/chatbot/query')
+      .send({ query: 'John Engineering' });
+
+    expect(res.status).toBe(200);
+    const calledFilter = mockFind.mock.calls[0][0] as any;
+    expect(calledFilter.$and).toBeDefined();
+    expect(calledFilter.$and).toHaveLength(2); // One for 'John', one for 'Engineering'
   });
 
   it('should return 400 if query is missing', async () => {

@@ -39,7 +39,12 @@ In this session, we integrated Redis into the `ts-mongo-oidc` application to ena
     *   **New Backend Tests**: Created `backend/src/__tests__/notifications.test.ts` to test the new notification endpoints.
 
 7.  **Chatbot Assistant**:
-    *   **Backend**: Created `backend/src/routes/chatbot.ts` with a natural language query parser for employee data.
+    *   **Backend**: Created `backend/src/routes/chatbot.ts` with an advanced natural language query parser.
+    *   **Features**:
+        *   **Range Queries**: "Who earns between 100000 and 200000?"
+        *   **Superlatives**: "Whose salary is the highest?" or "Who earns the least?"
+        *   **Attribute Specific**: "Which department does Ramesh belong to?" (Returns a targeted sentence response).
+        *   **Fuzzy Search**: Improved multi-term matching using `$and` for better precision.
     *   **Frontend**: Built a floating `ChatBot.tsx` widget with real-time query support and formatted result cards.
     *   **Security**: Integrated role-based filtering so users only query their own data while admins can query everything.
 
