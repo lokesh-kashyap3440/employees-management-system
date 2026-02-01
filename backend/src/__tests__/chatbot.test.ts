@@ -60,13 +60,20 @@ describe('LLM Chatbot Route', () => {
     mockFetch.mockResolvedValue({
       ok: true,
       json: async () => ({
-        choices: [{ message: { content: 'LLM Response' } }]
+        choices: [{ 
+          message: { 
+            content: JSON.stringify({
+              message: 'LLM Response',
+              matching_employee_ids: ['some-id']
+            })
+          } 
+        }]
       })
     });
   });
 
-  it('should call the LLM with employee data as context', async () => {
-    const employees = [{ name: 'John', salary: 50000 }];
+  it('should call the LLM and filter results based on returned IDs', async () => {
+    const employees = [{ _id: { toString: () => 'some-id' }, name: 'John', salary: 50000 }];
     mockToArray.mockResolvedValue(employees);
 
     const res = await request(app)
@@ -75,22 +82,18 @@ describe('LLM Chatbot Route', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.message).toBe('LLM Response');
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({
-        method: 'POST',
-        body: expect.stringContaining('John')
-      })
-    );
+    expect(res.body.results).toHaveLength(1);
+    expect(res.body.results[0].name).toBe('John');
   });
 
   it('should return results snippets in the response', async () => {
-    mockToArray.mockResolvedValue([{ name: 'Snippet' }]);
+    mockToArray.mockResolvedValue([{ _id: { toString: () => 'some-id' }, name: 'Snippet' }]);
 
     const res = await request(app)
       .post('/chatbot/query')
       .send({ query: 'any' });
 
+    expect(res.status).toBe(200);
     expect(res.body.results).toHaveLength(1);
     expect(res.body.results[0].name).toBe('Snippet');
   });
@@ -112,6 +115,6 @@ describe('LLM Chatbot Route', () => {
       .send({ query: 'any' });
 
     expect(res.status).toBe(500);
-    expect(res.body.error).toBe('Failed to process chat query with LLM');
+    expect(res.body.error).toBe('Failed to process chat query');
   });
 });

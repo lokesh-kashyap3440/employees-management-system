@@ -41,6 +41,8 @@ In this session, we integrated Redis into the `ts-mongo-oidc` application to ena
 7.  **Smart Chatbot Assistant (LLM-Powered)**:
     *   **Backend**: Replaced regex-based parsing with a full LLM integration in `backend/src/routes/chatbot.ts`.
     *   **LLM Support**: Configurable to use local **Ollama** (`qwen2.5-coder:3b`) or cloud models (compatible with OpenAI API format).
+    *   **Structured Output**: Forces the LLM to return a JSON object containing both the text message and an array of matching employee IDs.
+    *   **Precise Filtering**: The backend now filters the results based on the specific IDs identified by the LLM, ensuring only relevant employee cards are shown in the UI.
     *   **Context Injection**: The assistant is provided with real-time employee data (filtered by user role) as context for every query.
     *   **Capabilities**:
         *   **Reasoning**: Can perform calculations like average salaries or total headcount.
