@@ -72,9 +72,42 @@ export const employeeApi = {
     return response.data;
   },
 
-  // Delete employee
-  delete: async (id: string): Promise<{ deletedCount: number }> => {
-    const response = await apiClient.delete<{ deletedCount: number }>(`/employees/${id}`);
-    return response.data;
-  },
-};
+    // Delete employee
+
+    delete: async (id: string): Promise<{ deletedCount: number }> => {
+
+      const response = await apiClient.delete<{ deletedCount: number }>(`/employees/${id}`);
+
+      return response.data;
+
+    },
+
+  };
+
+  
+
+  export const notificationApi = {
+
+    // Get all notifications
+
+    getAll: async (): Promise<any[]> => {
+
+      const response = await apiClient.get<any[]>('/notifications');
+
+      return response.data;
+
+    },
+
+  
+
+    // Clear all notifications
+
+    clearAll: async (): Promise<void> => {
+
+      await apiClient.delete('/notifications');
+
+    },
+
+  };
+
+  

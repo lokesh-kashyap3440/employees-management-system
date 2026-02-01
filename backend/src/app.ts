@@ -3,6 +3,7 @@ import cors from 'cors';
 import type { Request, Response } from 'express';
 import employeeRouter from './routes/employee.ts';
 import authRouter from './routes/auth.ts';
+import notificationsRouter from './routes/notifications.ts';
 import { setupSwagger } from './swagger.ts';
 
 const app = express();
@@ -28,5 +29,6 @@ app.get('/health', (_req: Request, res: Response) => {
 // Routes
 app.use('/auth', authRouter);
 app.use('/employees', employeeRouter);
+app.use('/notifications', notificationsRouter);
 
 export default app;

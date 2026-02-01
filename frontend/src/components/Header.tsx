@@ -1,19 +1,25 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/authSlice';
-import { markAllAsRead, clearNotifications } from '../store/notificationSlice';
+import { markAllAsRead, clearNotifications, fetchNotifications, clearPersistentNotifications } from '../store/notificationSlice';
 import type { Notification } from '../store/notificationSlice';
-import type { RootState } from '../store';
+import type { RootState, AppDispatch } from '../store';
 import { LogOut, Users, Settings, Bell, Clock, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ProfileModal } from './ProfileModal';
 
 export const Header: React.FC = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const [showNotifications, setShowNotifications] = React.useState(false);
   const [showProfileModal, setShowProfileModal] = React.useState(false);
-  const user = useSelector((state: RootState) => state.auth.user);
+  const { user, role } = useSelector((state: RootState) => state.auth);
   const { notifications, unreadCount } = useSelector((state: RootState) => state.notification);
+
+  useEffect(() => {
+    if (role === 'admin') {
+      dispatch(fetchNotifications());
+    }
+  }, [role, dispatch]);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -21,7 +27,11 @@ export const Header: React.FC = () => {
 
   const handleClearNotifications = (e: React.MouseEvent) => {
     e.stopPropagation();
-    dispatch(clearNotifications());
+    if (role === 'admin') {
+      dispatch(clearPersistentNotifications());
+    } else {
+      dispatch(clearNotifications());
+    }
   };
 
   const toggleNotifications = () => {

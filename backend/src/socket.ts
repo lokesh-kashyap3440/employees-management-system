@@ -1,5 +1,6 @@
 import { Server as SocketIOServer } from 'socket.io';
 import { Server as HttpServer } from 'http';
+import { pushNotification } from './redis.ts';
 
 let io: SocketIOServer;
 
@@ -41,4 +42,7 @@ export const notifyAdmin = (data: any) => {
   } else {
     console.warn('⚠️ Socket.io not initialized, cannot notify admin');
   }
+
+  // Persist to Redis
+  pushNotification(data);
 };

@@ -6,9 +6,13 @@ import type { Employee } from '../models/employee.ts';
 import { authenticateToken } from '../middleware/auth.ts';
 import type { AuthRequest } from '../middleware/auth.ts';
 import { notifyAdmin } from '../socket.ts';
+import { getCache, setCache, deleteCache, deletePattern } from '../redis.ts';
 
 const router = Router();
 const collectionName = 'employees';
+
+const CACHE_KEY_PREFIX = 'employee:';
+const LIST_CACHE_KEY_PREFIX = 'employees_list:';
 
 /**
  * @swagger
@@ -96,17 +100,21 @@ router.post('/', authenticateToken as any, async (req: AuthRequest, res: Respons
 
     const employee: Employee = {
       name,
-      position,
-      department,
-      salary: salary ? Number(salary) : undefined,
-      createdBy: req.user?.username,
       createdAt: new Date(),
       updatedAt: new Date()
     };
     
+    if (position) employee.position = position;
+    if (department) employee.department = department;
+    if (salary) employee.salary = Number(salary);
+    if (req.user?.username) employee.createdBy = req.user.username;
+    
     const result = await getDb()
       .collection(collectionName)
       .insertOne(employee as any);
+
+    // Invalidate list caches
+    await deletePattern(`${LIST_CACHE_KEY_PREFIX}*`);
 
     // Notify admin if the creator is not the admin themselves
     if (req.user?.role !== 'admin') {
@@ -147,12 +155,23 @@ router.post('/', authenticateToken as any, async (req: AuthRequest, res: Respons
  */
 router.get('/', authenticateToken as any, async (req: AuthRequest, res: Response) => {
   try {
+    const cacheKey = `${LIST_CACHE_KEY_PREFIX}${req.user?.role}:${req.user?.username}`;
+    const cachedData = await getCache(cacheKey);
+    if (cachedData) {
+      console.log('📦 Serving employees list from cache');
+      return res.json(cachedData);
+    }
+
     const query = req.user?.role === 'admin' ? {} : { createdBy: req.user?.username };
     const employees = await getDb()
       .collection(collectionName)
       .find(query)
       .sort({ updatedAt: -1, _id: -1 })
       .toArray();
+
+    // Store in cache for 5 minutes
+    await setCache(cacheKey, employees, 300);
+
     res.json(employees);
   } catch (error) {
     console.error('Error fetching employees:', error);
@@ -190,6 +209,19 @@ router.get('/', authenticateToken as any, async (req: AuthRequest, res: Response
 router.get('/:id', authenticateToken as any, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
+    const cacheKey = `${CACHE_KEY_PREFIX}${id}`;
+    
+    // Check cache first
+    const cachedEmployee = await getCache(cacheKey);
+    if (cachedEmployee) {
+      console.log(`📦 Serving employee ${id} from cache`);
+      // Authorization check for cached data
+      if (req.user?.role !== 'admin' && cachedEmployee.createdBy !== req.user?.username) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+      return res.json(cachedEmployee);
+    }
+
     const employee = await getDb()
       .collection(collectionName)
       .findOne({ _id: new ObjectId(id as string) });
@@ -201,6 +233,9 @@ router.get('/:id', authenticateToken as any, async (req: AuthRequest, res: Respo
     if (req.user?.role !== 'admin' && employee.createdBy !== req.user?.username) {
         return res.status(403).json({ error: 'Access denied' });
     }
+
+    // Store in cache
+    await setCache(cacheKey, employee);
 
     res.json(employee);
   } catch (error) {
@@ -271,6 +306,10 @@ router.put('/:id', authenticateToken as any, async (req: AuthRequest, res: Respo
       return res.status(404).json({ error: 'Employee not found' });
     }
 
+    // Invalidate caches
+    await deleteCache(`${CACHE_KEY_PREFIX}${id}`);
+    await deletePattern(`${LIST_CACHE_KEY_PREFIX}*`);
+
     // Notify admin
     if (req.user?.role !== 'admin') {
       notifyAdmin({
@@ -337,6 +376,10 @@ router.delete('/:id', authenticateToken as any, async (req: AuthRequest, res: Re
     if (result.deletedCount === 0) {
       return res.status(404).json({ error: 'Employee not found' });
     }
+
+    // Invalidate caches
+    await deleteCache(`${CACHE_KEY_PREFIX}${id}`);
+    await deletePattern(`${LIST_CACHE_KEY_PREFIX}*`);
 
     // Notify admin
     if (req.user?.role !== 'admin') {

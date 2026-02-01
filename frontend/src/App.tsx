@@ -32,7 +32,7 @@ function AppContent() {
         console.log('🔌 Connected to Socket.io');
         if (role === 'admin') {
           console.log('👑 Joining admin room...');
-          socket.emit('join-admin');
+          socket.emit('join_admin');
         }
       });
 

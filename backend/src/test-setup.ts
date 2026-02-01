@@ -1,7 +1,7 @@
 import { jest } from '@jest/globals';
 
 // Mock db.ts
-jest.mock('../db.ts', () => {
+jest.mock('./db.ts', () => {
   const mDb = {
     collection: jest.fn().mockReturnThis(),
     insertOne: jest.fn(),

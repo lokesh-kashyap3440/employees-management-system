@@ -1,4 +1,11 @@
 services:
+  # Redis Service
+  - type: redis
+    name: ems-redis
+    region: ohio # or your preferred region
+    plan: free # or starter/standard
+    ipAllowList: [] # only allow internal connections
+
   # Backend Service
   - type: web
     name: ems-backend
@@ -17,6 +24,11 @@ services:
         sync: false # User must enter this in Render Dashboard
       - key: JWT_SECRET
         generateValue: true
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: ems-redis
+          property: connectionString
 
   # Frontend Static Site
   - type: web
