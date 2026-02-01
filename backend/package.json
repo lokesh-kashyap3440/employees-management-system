@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "dev": "ts-node-dev --respawn --transpile-only --esm src/server.ts",
     "build": "esbuild src/server.ts --bundle --platform=node --format=esm --outdir=dist --packages=external",
     "start": "node dist/server.js",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
