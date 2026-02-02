@@ -7,6 +7,7 @@ export interface EmployeeState {
   selectedEmployee: Employee | null;
   loading: boolean;
   error: string | null;
+  searchQuery: string;
 }
 
 const initialState: EmployeeState = {
@@ -14,6 +15,7 @@ const initialState: EmployeeState = {
   selectedEmployee: null,
   loading: false,
   error: null,
+  searchQuery: '',
 };
 
 // Async thunks
@@ -88,6 +90,9 @@ const employeeSlice = createSlice({
     setSelectedEmployee: (state, action: PayloadAction<Employee | null>) => {
       state.selectedEmployee = action.payload;
     },
+    setSearchQuery: (state, action: PayloadAction<string>) => {
+      state.searchQuery = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -159,5 +164,5 @@ const employeeSlice = createSlice({
   },
 });
 
-export const { clearError, clearSelectedEmployee, setSelectedEmployee } = employeeSlice.actions;
+export const { clearError, clearSelectedEmployee, setSelectedEmployee, setSearchQuery } = employeeSlice.actions;
 export default employeeSlice.reducer;

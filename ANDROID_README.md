@@ -87,10 +87,10 @@ plugins: {
 ## 🔧 Common Troubleshooting
 
 ### Error: "Gradle requires JVM 17 or later"
-Your terminal is using an old Java version.
-**Fix:**
+Your terminal is using an old Java version (or one that is too new, like Java 25).
+**Fix:** Use the JDK bundled with Android Studio (Java 21).
 ```powershell
-$env:JAVA_HOME = "C:\Program Files\Java\jdk-21"
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
 $env:Path = "$env:JAVA_HOME\bin;$env:Path"
 ```
 

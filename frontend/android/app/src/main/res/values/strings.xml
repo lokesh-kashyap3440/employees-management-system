@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">EMS</string>
+    <string name="title_activity_main">EMS</string>
+    <string name="package_name">com.ems.app</string>
+    <string name="custom_url_scheme">com.ems.app</string>
+    <string name="server_client_id">92545590974-6gi5980fjtmvjq4vl67hu27fmfigr36q.apps.googleusercontent.com</string>
+</resources>

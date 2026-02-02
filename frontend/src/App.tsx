@@ -16,10 +16,13 @@ import { addNotification } from './store/notificationSlice';
 import { fetchEmployees } from './store/employeeSlice';
 import { API_BASE_URL } from './services/api';
 
+import { EmployeeDetailsModal } from './components/EmployeeDetailsModal';
+
 function AppContent() {
   const dispatch = useDispatch<AppDispatch>();
   const [showForm, setShowForm] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [viewingEmployee, setViewingEmployee] = useState<Employee | null>(null);
   const { isAuthenticated, user, role } = useSelector((state: RootState) => state.auth);
   const [currentPage, setCurrentPage] = useState<'login' | 'register'>('login');
 
@@ -107,6 +110,14 @@ function AppContent() {
     setEditingEmployee(null);
   };
 
+  const handleView = (employee: Employee) => {
+    setViewingEmployee(employee);
+  };
+
+  const handleCloseView = () => {
+    setViewingEmployee(null);
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="bg-[#f8faff] min-h-screen">
@@ -131,12 +142,20 @@ function AppContent() {
       <Toaster position="top-right" />
       <Header />
       <main>
-        <EmployeeList onEdit={handleEdit} onAdd={handleAdd} />
+        <EmployeeList onEdit={handleEdit} onAdd={handleAdd} onView={handleView} />
         <AnimatePresence>
           {showForm && (
             <EmployeeForm
               employee={editingEmployee}
               onClose={handleCloseForm}
+            />
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {viewingEmployee && (
+            <EmployeeDetailsModal
+              employee={viewingEmployee}
+              onClose={handleCloseView}
             />
           )}
         </AnimatePresence>

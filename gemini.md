@@ -84,3 +84,10 @@ In this session, we integrated Redis into the `ts-mongo-oidc` application to ena
 3.  **React Effect Dependencies**: The `useEffect` hook's dependency array is critical. omitting `role` meant the socket logic ran before the user was fully identified as an admin, causing them to miss real-time updates.
 4.  **Infrastructure as Code**: Updating `render.yaml` and `docker-compose.yml` ensures that the development and production environments remain consistent and that new services like Redis are automatically provisioned.
 5.  **Event Naming Consistency**: A simple typo in event names (e.g., `join-admin` vs `join_admin`) can silently break features. verifying event names across frontend and backend is essential.
+
+## Session Update: Android & UI Polish
+
+- **Android Build Fixed**: Resolved complex Gradle/JVM version conflicts by downgrading to Gradle 8.4, forcing Java 21, and fixing dependency exclusions.
+- **Native Login**: Implemented native Google Sign-In for Android with fallback logic.
+- **Chatbot CRUD**: Upgraded LLM logic to support create, update, and delete actions via natural language.
+- **UI Enhancements**: Added real-time fuzzy search and a read-only employee details modal.

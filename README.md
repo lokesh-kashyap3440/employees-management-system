@@ -56,6 +56,7 @@ To use the Android app with your live **Render** deployment:
 - **Real-Time Sync**: Socket.io keeps all devices updated instantly.
 - **Redis Caching**: High-performance data retrieval.
 - **AI Chatbot**: Query your employee database using natural language.
+- **Advanced UI**: Real-time fuzzy search and read-only detailed view for employee records.
 
 ## 🤖 AI Chatbot Integration
 

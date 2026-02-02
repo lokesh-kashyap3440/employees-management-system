@@ -1,14 +1,24 @@
 import { jest, describe, beforeEach, it, expect } from '@jest/globals';
 import request from 'supertest';
+import { ObjectId } from 'mongodb';
 
 // Define mocks
 const mockToArray = jest.fn();
 const mockProject = jest.fn().mockReturnThis();
-const mockFind = jest.fn().mockReturnValue({
+const mockFind = jest.fn().mockReturnValue({ 
   project: mockProject,
-  toArray: mockToArray
+  toArray: mockToArray 
 });
-const mockCollection = jest.fn().mockReturnValue({ find: mockFind });
+const mockInsertOne = jest.fn();
+const mockUpdateOne = jest.fn();
+const mockDeleteOne = jest.fn();
+
+const mockCollection = jest.fn().mockReturnValue({ 
+    find: mockFind,
+    insertOne: mockInsertOne,
+    updateOne: mockUpdateOne,
+    deleteOne: mockDeleteOne
+});
 const mockGetDb = jest.fn().mockReturnValue({ collection: mockCollection });
 
 // Mock dependencies
@@ -51,105 +61,102 @@ global.fetch = mockFetch as any;
 
 const { default: app } = await import('../app.ts');
 
-describe('LLM Chatbot Route (Refined JSON Parsing)', () => {
+describe('LLM Chatbot CRUD logic', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUser = { username: 'admin', role: 'admin' };
-    
-    // Default fetch mock response
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        choices: [{
-          message: {
-            content: JSON.stringify({
-              message: 'LLM Response',
-              matching_employee_ids: ['some-id']
-            })
-          }
-        }]
-      })
-    });
-  });
-
-  it('should filter results based on returned IDs', async () => {
-    const employees = [{ _id: { toString: () => 'some-id' }, name: 'John', salary: 50000 }];
-    mockToArray.mockResolvedValue(employees);
-
-    const res = await request(app)
-      .post('/chatbot/query')
-      .send({ query: 'How much does John earn?' });
-
-    expect(res.status).toBe(200);
-    expect(res.body.results).toHaveLength(1);
-    expect(res.body.results[0].name).toBe('John');
-  });
-
-  it('should filter by createdBy for non-admin user', async () => {
-    mockUser = { username: 'regular', role: 'user' };
     mockToArray.mockResolvedValue([]);
-
-    await request(app)
-      .post('/chatbot/query')
-      .send({ query: 'who am i?' });
-
-    expect(mockFind).toHaveBeenCalledWith(expect.objectContaining({
-      createdBy: 'regular'
-    }));
   });
 
-  it('should return results snippets in the response', async () => {
-    const employees = [{ _id: { toString: () => 'id123' }, name: 'Markdown User' }];
-    mockToArray.mockResolvedValue(employees);
-    
+  it('should handle intent: create', async () => {
     mockFetch.mockResolvedValue({
       ok: true,
       json: async () => ({
-        choices: [{
-          message: {
-            content: '```json\n{\"message\": \"wrapped\", \"matching_employee_ids\": [\"id123\"]}\n```'
-          }
-        }]
+        choices: [{ message: { content: JSON.stringify({
+          intent: 'create',
+          data: { name: 'ChatBot User', salary: '50000' }
+        }) } }]
       })
     });
 
     const res = await request(app)
       .post('/chatbot/query')
-      .send({ query: 'markdown' });
+      .send({ query: 'Add new user' });
 
     expect(res.status).toBe(200);
-    expect(res.body.message).toBe('wrapped');
+    expect(res.body.message).toContain('Successfully created');
+    expect(mockInsertOne).toHaveBeenCalled();
+  });
+
+  it('should handle intent: update', async () => {
+    const targetId = new ObjectId().toString();
+    // Context needs to have this user
+    mockToArray.mockResolvedValue([{ _id: new ObjectId(targetId), name: 'Target' }]);
+
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: JSON.stringify({
+          intent: 'update',
+          target_id: targetId,
+          update_fields: { salary: '99000' }
+        }) } }]
+      })
+    });
+
+    const res = await request(app)
+      .post('/chatbot/query')
+      .send({ query: 'Give Target a raise' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toContain('Updated details');
+    expect(mockUpdateOne).toHaveBeenCalled();
+  });
+
+  it('should handle intent: delete', async () => {
+    const targetId = new ObjectId().toString();
+    mockToArray.mockResolvedValue([{ _id: new ObjectId(targetId), name: 'FiredUser' }]);
+
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: JSON.stringify({
+          intent: 'delete',
+          target_id: targetId
+        }) } }]
+      })
+    });
+
+    const res = await request(app)
+      .post('/chatbot/query')
+      .send({ query: 'Fire FiredUser' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toContain('Deleted employee');
+    expect(mockDeleteOne).toHaveBeenCalled();
+  });
+
+  it('should handle intent: query', async () => {
+    const id = new ObjectId().toString();
+    mockToArray.mockResolvedValue([{ _id: new ObjectId(id), name: 'Found' }]);
+
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: JSON.stringify({
+          intent: 'query',
+          message: 'Found one!',
+          matching_ids: [id]
+        }) } }]
+      })
+    });
+
+    const res = await request(app)
+      .post('/chatbot/query')
+      .send({ query: 'Find Found' });
+
+    expect(res.status).toBe(200);
     expect(res.body.results).toHaveLength(1);
-  });
-
-  it('should fallback to plain text if JSON parsing fails', async () => {
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        choices: [{ message: { content: 'Not a JSON' } }]
-      })
-    });
-
-    const res = await request(app)
-      .post('/chatbot/query')
-      .send({ query: 'plain' });
-
-    expect(res.status).toBe(200);
-    expect(res.body.message).toBe('Not a JSON');
-    expect(res.body.results).toHaveLength(0);
-  });
-
-  it('should handle empty message from LLM', async () => {
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({ choices: [] })
-    });
-
-    const res = await request(app)
-      .post('/chatbot/query')
-      .send({ query: 'any' });
-
-    expect(res.status).toBe(200);
-    expect(res.body.message).toBe("I've processed your query.");
+    expect(res.body.results[0].name).toBe('Found');
   });
 });

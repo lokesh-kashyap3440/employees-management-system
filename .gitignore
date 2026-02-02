@@ -35,7 +35,7 @@ tmp
 temp
 
 # Capacitor & Android
-frontend/android/
+# frontend/android/
 *.apk
 *.aab
 *.jks
