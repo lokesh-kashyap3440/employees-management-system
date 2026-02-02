@@ -15,7 +15,7 @@ interface EmployeeListProps {
 export const EmployeeList: React.FC<EmployeeListProps> = ({ onEdit, onAdd, onView }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { employees, loading, error, searchQuery } = useSelector((state: RootState) => state.employee);
-  const { user } = useSelector((state: RootState) => state.auth);
+  const { user, role } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
     dispatch(fetchEmployees());
@@ -129,10 +129,10 @@ export const EmployeeList: React.FC<EmployeeListProps> = ({ onEdit, onAdd, onVie
                 <span className="text-sm font-semibold">{employee.department}</span>
               </div>
               
-              {(user?.role === 'admin' || user?.username === employee.createdBy) && (
+              {(role === 'admin' || user === employee.createdBy) && (
                 <div className="flex items-center gap-3 text-gray-600 bg-gray-50 p-3 rounded-xl">
                   <Wallet size={18} className="text-green-500" />
-                  <span className="text-sm font-semibold">${employee.salary.toLocaleString()}</span>
+                  <span className="text-sm font-semibold">${(employee.salary || 0).toLocaleString()}</span>
                 </div>
               )}
 

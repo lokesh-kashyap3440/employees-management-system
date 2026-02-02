@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { X, User, Briefcase, Building2, Calendar, Wallet, ShieldCheck } from 'lucide-react';
+import { X, User, Building2, Calendar, Wallet } from 'lucide-react';
 import type { Employee } from '../types/employee';
 
 interface EmployeeDetailsModalProps {
@@ -63,7 +63,7 @@ export const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({ empl
                     </div>
                     <div>
                         <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Salary</p>
-                        <p className="text-gray-900 font-semibold">${employee.salary.toLocaleString()}</p>
+                        <p className="text-gray-900 font-semibold">${(employee.salary || 0).toLocaleString()}</p>
                     </div>
                 </div>
 
@@ -73,7 +73,7 @@ export const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({ empl
                             <User size={14} />
                             <span className="text-[10px] font-bold uppercase">Added By</span>
                         </div>
-                        <p className="text-gray-900 font-semibold text-sm">{employee.createdBy}</p>
+                        <p className="text-gray-900 font-semibold text-sm">{employee.createdBy || 'Unknown'}</p>
                     </div>
                     <div className="bg-gray-50 p-4 rounded-2xl">
                         <div className="flex items-center gap-2 mb-1 text-gray-400">

@@ -5,6 +5,8 @@ export interface Employee {
     department?: string;
     salary?: number;
     createdBy?: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 export interface CreateEmployeeRequest {
     name: string;
