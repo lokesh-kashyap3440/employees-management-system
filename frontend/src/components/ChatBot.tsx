@@ -77,7 +77,7 @@ export const ChatBot: React.FC = () => {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="bg-white w-[400px] h-[600px] rounded-[2.5rem] shadow-2xl border border-blue-50 flex flex-col overflow-hidden mb-4"
+            className="bg-white w-[90vw] h-[70vh] md:w-[400px] md:h-[600px] rounded-[2.5rem] shadow-2xl border border-blue-50 flex flex-col overflow-hidden mb-4"
           >
             {/* Header */}
             <div className="bg-blue-600 p-6 text-white flex justify-between items-center">

@@ -57,6 +57,34 @@ To use the Android app with your live **Render** deployment:
 - **Redis Caching**: High-performance data retrieval.
 - **AI Chatbot**: Query your employee database using natural language.
 
+## 🤖 AI Chatbot Integration
+
+The system features a smart assistant powered by Large Language Models (LLMs) that allows users to query employee data using natural language.
+
+### Features
+- **Natural Language Understanding**: Ask "Who earns more than $80k?" or "Show me all engineers" and get instant, filtered results.
+- **Context-Aware**: The bot is aware of the current user's role and data access permissions (RBAC).
+- **JSON-Based Reasoning**: The backend forces the LLM to output structured JSON, ensuring the UI can render rich employee cards instead of just text.
+
+### Configuration
+The chatbot uses a provider-agnostic adapter (`backend/src/routes/chatbot.ts`).
+
+**Environment Variables (`backend/.env`):**
+```env
+# Provider: 'openai', 'anthropic', 'groq', or 'ollama' (for local)
+LLM_PROVIDER=openai
+
+# API Key (Not needed for Ollama)
+LLM_API_KEY=sk-...
+
+# Model Name
+LLM_MODEL=gpt-4o-mini
+# For local: qwen2.5-coder:3b
+
+# API URL (Optional, defaults to provider standard)
+LLM_API_URL=https://api.openai.com/v1/chat/completions
+```
+
 ---
 
 ## 🚀 Local Quick Start
