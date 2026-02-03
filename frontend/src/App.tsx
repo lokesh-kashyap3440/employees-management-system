@@ -37,10 +37,16 @@ function AppContent() {
       socket.on('connect', () => {
         console.log('🔌 Connected to Socket.io with ID:', socket.id);
         if (role === 'admin') {
-          console.log('👑 Joining admin room...');
+          console.log('👑 Joining admin room (on connect)...');
           socket.emit('join-admin');
         }
       });
+
+      // Handle race condition: If already connected, join immediately
+      if (socket.connected && role === 'admin') {
+         console.log('👑 Joining admin room (immediate)...');
+         socket.emit('join-admin');
+      }
 
       socket.on('notification', (data) => {
         console.log('🔔 Notification received:', data);
