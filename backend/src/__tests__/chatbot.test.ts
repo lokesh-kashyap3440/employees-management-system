@@ -9,12 +9,14 @@ const mockFind = jest.fn().mockReturnValue({
   project: mockProject,
   toArray: mockToArray 
 });
+const mockFindOne = jest.fn();
 const mockInsertOne = jest.fn();
 const mockUpdateOne = jest.fn();
 const mockDeleteOne = jest.fn();
 
 const mockCollection = jest.fn().mockReturnValue({ 
     find: mockFind,
+    findOne: mockFindOne,
     insertOne: mockInsertOne,
     updateOne: mockUpdateOne,
     deleteOne: mockDeleteOne
@@ -69,6 +71,11 @@ describe('LLM Chatbot CRUD logic', () => {
   });
 
   it('should handle intent: create', async () => {
+    mockInsertOne.mockResolvedValue({ insertedId: new ObjectId() });
+    mockUpdateOne.mockResolvedValue({ modifiedCount: 1 });
+    mockDeleteOne.mockResolvedValue({ deletedCount: 1 });
+    mockFindOne.mockResolvedValue(null); // Default to not found, override in tests if needed
+
     mockFetch.mockResolvedValue({
       ok: true,
       json: async () => ({

@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "build": "esbuild src/server.ts --bundle --platform=node --format=esm --outdir=dist --packages=external",
-    "start": "node dist/server.js",
+    "dev": "bun --watch src/server.ts",
+    "build": "bun build src/server.ts --target=node --outfile=dist/server.js",
+    "start": "bun src/server.ts",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
     "test:coverage": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage"
   },

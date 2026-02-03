@@ -9,12 +9,12 @@ services:
   # Backend Service
   - type: web
     name: ems-api
-    env: node
+    env: bun
     region: ohio # or your preferred region
     plan: free # or starter/standard
     rootDir: backend
-    buildCommand: npm install && npm run build
-    startCommand: npm start
+    buildCommand: bun install
+    startCommand: bun run start
     envVars:
       - key: PORT
         value: 10000
@@ -43,7 +43,7 @@ services:
     name: ems-frontend
     env: static
     rootDir: frontend
-    buildCommand: npm install && npm run build
+    buildCommand: bun install && bun run build
     staticPublishPath: ./dist
     envVars:
       - key: VITE_GOOGLE_CLIENT_ID
