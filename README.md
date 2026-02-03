@@ -1,18 +1,29 @@
 # Employee Management System (Full Stack OIDC)
 
-A robust, full-stack application for managing employees, featuring local authentication, Google OIDC login, Redis caching, real-time sync, and an AI Chatbot. Now fully optimized for **Mobile (Android/iOS)** and **PWA**.
+A robust, full-stack application for managing employees, featuring local authentication, Google OIDC login, Redis caching, real-time sync, and an AI Chatbot. Now fully optimized for **Bun**, **Mobile (Android)**, and **PWA**.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![React](https://img.shields.io/badge/React-19-blue)
-![Node.js](https://img.shields.io/badge/Node.js-18+-green)
+![Bun](https://img.shields.io/badge/Bun-1.1+-black)
 ![Capacitor](https://img.shields.io/badge/Capacitor-Android-blue)
+
+## ⚡ Powered by Bun
+
+This project has been migrated to [Bun](https://bun.sh) for lightning-fast installs, builds, and runtime execution.
+
+- **Backend**: Runs natively on Bun (`bun src/server.ts`).
+- **Frontend**: Dependencies and builds are managed by Bun.
+- **Tests**: Compatible with `bun test` (Backend) and `vitest` (Frontend).
+
+---
 
 ## 📱 Mobile & Android Development
 
 This project uses **Capacitor** to bridge the web application into a native Android app.
 
 ### 1. Prerequisites
+- **Bun 1.1+** (Install via `powershell -c "irm bun.sh/install.ps1 | iex"` on Windows).
 - **Java JDK 17 or 21** (Set `JAVA_HOME` environment variable).
 - **Android Studio** (For compiling the final APK).
 
@@ -23,9 +34,9 @@ To test locally on an Android emulator:
 3.  **Sync & Run**:
     ```bash
     cd frontend
-    npm run build
-    npx cap sync android
-    npx cap run android
+    bun run build
+    bunx cap sync android
+    bunx cap run android
     ```
 
 ### 3. Production Render Setup (Android)
@@ -36,8 +47,8 @@ To use the Android app with your live **Render** deployment:
     ```bash
     cd frontend
     # Ensure .env VITE_API_URL is commented out or empty to force production URL
-    npm run build
-    npx cap sync android
+    bun run build
+    bunx cap sync android
     ```
 4.  **Generate APK**: In Android Studio, go to **Build > Build APK(s)**.
 
@@ -55,9 +66,9 @@ For Google Sign-In to work on Android, you must:
 
 ## 🏗 Architecture
 
-- **`backend/`**: Express.js API with MongoDB, Redis, and Socket.io.
+- **`backend/`**: Bun/Express API with MongoDB, Redis, and Socket.io.
 - **`frontend/`**: React (Vite) + Capacitor for Mobile.
-- **`Infrastructure`**: Docker Compose and Render Blueprints.
+- **`Infrastructure`**: Docker (Bun Image) and Render Blueprints.
 
 ## ✨ Features
 
@@ -90,10 +101,14 @@ VITE_GOOGLE_CLIENT_ID=...
 ### 2. Run Servers
 ```bash
 # Terminal 1: Backend
-cd backend && npm run dev
+cd backend
+bun install
+bun run dev
 
 # Terminal 2: Frontend
-cd frontend && npm run dev
+cd frontend
+bun install
+bun run dev
 ```
 
 ---
@@ -101,15 +116,15 @@ cd frontend && npm run dev
 ## ☁️ Deployment (Render.com)
 
 1.  **Create Blueprint**: Use the `render.yaml` file in the root.
-2.  **Env Vars**: Enter your `MONGODB_URI` and `GOOGLE_CLIENT_ID` in the Render dashboard.
-3.  **CORS**: The backend is pre-configured to allow requests from `capacitor://localhost` (Android).
+2.  **Environment**: The configuration is pre-set to use the `bun` environment.
+3.  **Env Vars**: Enter your `MONGODB_URI` and `GOOGLE_CLIENT_ID` in the Render dashboard.
 
 ## 🧪 Testing
 
 Both Frontend and Backend maintain **>90% code coverage**.
 ```bash
 # Run tests with coverage
-npm run test:coverage # (in either directory)
+bun run test:coverage # (in either directory)
 ```
 
 ---
@@ -119,6 +134,6 @@ npm run test:coverage # (in either directory)
 | Component | Technologies |
 |-----------|--------------|
 | **Frontend** | React 19, Vite, Capacitor, Redux Toolkit, Tailwind CSS |
-| **Backend** | Node.js, Express, TypeScript, MongoDB, Redis, Socket.io |
+| **Backend** | Bun, Express, TypeScript, MongoDB, Redis, Socket.io |
 | **Mobile** | PWA, Capacitor Android |
-| **Cloud** | Render, Docker |
+| **Cloud** | Render, Docker (Bun Images) |
