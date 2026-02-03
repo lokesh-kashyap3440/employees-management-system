@@ -1,15 +1,15 @@
 # Frontend Dockerfile
 # Stage 1: Build
-FROM node:20-alpine as build
+FROM oven/bun:1-slim as build
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm install
+COPY package.json bun.lockb ./
+RUN bun install --frozen-lockfile
 
 COPY . .
 # Note: Ensure VITE_API_URL is handled if needed during build
-RUN npm run build
+RUN bun run build
 
 # Stage 2: Serve with Nginx
 FROM nginx:stable-alpine

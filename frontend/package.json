@@ -4,11 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -p tsconfig.app.json && vite build",
+    "dev": "bunx --bun vite",
+    "build": "tsc -p tsconfig.app.json && bunx --bun vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "test": "vitest run",
+    "preview": "bunx --bun vite preview",
+    "test": "vitest",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
