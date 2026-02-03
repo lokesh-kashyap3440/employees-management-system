@@ -51,6 +51,19 @@ router.post('/query', authenticateToken as any, async (req: AuthRequest, res: Re
   const username = req.user?.username;
   const db = getDb();
 
+  // DEBUG COMMAND: Check identity and DB connection
+  if (query.toLowerCase().trim() === 'who am i' || query.toLowerCase().trim() === 'debug_info') {
+      const dbName = db.databaseName;
+      // Mask the mongo URI to be safe but identifiable (e.g. "...cluster0...")
+      const mongoUri = process.env.MONGODB_URI || 'unknown';
+      const maskedUri = mongoUri.includes('@') ? '...' + mongoUri.split('@')[1] : 'local/unknown';
+      
+      return res.json({ 
+          results: [], 
+          message: `🔍 **Debug Info**\n\n👤 **User:** ${username}\n🔑 **Role:** ${req.user?.role}\n💾 **DB Name:** ${dbName}\n🔗 **Connection:** ${maskedUri}` 
+      });
+  }
+
   try {
     // 1. Get or Create Session
     let session = await db.collection<ChatSession>('chat_sessions').findOne({ userId: username });
