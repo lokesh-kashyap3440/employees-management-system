@@ -6,19 +6,69 @@ import { authenticateToken } from '../middleware/auth.ts';
 import type { AuthRequest } from '../middleware/auth.ts';
 import { broadcastUpdate } from '../socket.ts';
 import { deletePattern, deleteCache } from '../redis.ts';
+import type { ChatSession, ChatMessage } from '../models/chatSession.ts';
 
 const router = Router();
 
+// GET /chatbot/history - Retrieve past messages for the current user
+router.get('/history', authenticateToken as any, async (req: AuthRequest, res: Response) => {
+    try {
+        const db = getDb();
+        const username = req.user?.username;
+        
+        console.log(`📜 Fetching history for user: ${username}`); // Debug log
+
+        const session = await db.collection<ChatSession>('chat_sessions').findOne({ userId: username });
+        
+        if (!session) {
+            console.log(`📜 No session found for: ${username}`);
+            return res.json({ messages: [] });
+        }
+
+        console.log(`📜 Found ${session.messages.length} messages for: ${username}`);
+
+        // Transform for frontend (skip system prompts if any)
+        const messages = session.messages
+            .filter(m => m.role !== 'system')
+            .map(m => ({
+                id: m.timestamp.getTime().toString(),
+                text: m.content,
+                sender: m.role === 'user' ? 'user' : 'bot'
+            }));
+
+        res.json({ messages });
+    } catch (error) {
+        console.error('History Fetch Error:', error);
+        res.status(500).json({ error: 'Failed to fetch history' });
+    }
+});
+
+// POST /chatbot/query - Process new message
 router.post('/query', authenticateToken as any, async (req: AuthRequest, res: Response) => {
   const { query } = req.body;
   if (!query) return res.status(400).json({ error: 'Query is required' });
 
+  const username = req.user?.username;
+  const db = getDb();
+
   try {
-    const db = getDb();
-    // 1. Fetch simplified context for the LLM
+    // 1. Get or Create Session
+    let session = await db.collection<ChatSession>('chat_sessions').findOne({ userId: username });
+    if (!session) {
+        session = {
+            userId: username!,
+            messages: [],
+            createdAt: new Date(),
+            updatedAt: new Date()
+        };
+        const result = await db.collection<ChatSession>('chat_sessions').insertOne(session);
+        session._id = result.insertedId;
+    }
+
+    // 2. Fetch Employee Data Context
     const filter: any = {};
     if (req.user?.role !== 'admin') {
-      filter.createdBy = req.user?.username;
+      filter.createdBy = username;
     }
 
     const employees = await db.collection('employees')
@@ -26,15 +76,17 @@ router.post('/query', authenticateToken as any, async (req: AuthRequest, res: Re
       .project({ name: 1, position: 1, department: 1, salary: 1, createdBy: 1 })
       .toArray();
 
-    const apiUrl = process.env.LLM_API_URL || 'http://localhost:11434/v1/chat/completions';
-    const model = process.env.LLM_MODEL || 'qwen2.5-coder:3b';
-
     const systemPrompt = `
       You are an intelligent HR Assistant capable of performing actions.
       
+      CRITICAL INSTRUCTION: 
+      - Always use the "EXISTING DATA" below as the source of truth. 
+      - If conversation history contradicts "EXISTING DATA", ignore the history.
+      - If the user asks for a calculation (sum, average), perform it using "EXISTING DATA".
+      
       CURRENT USER CONTEXT:
       - Role: ${req.user?.role}
-      - Username: ${req.user?.username}
+      - Username: ${username}
       
       EXISTING DATA (Use IDs from here for updates/deletes):
       ${JSON.stringify(employees.map(e => ({ id: e._id.toString(), name: e.name, ...e })))}
@@ -72,6 +124,17 @@ router.post('/query', authenticateToken as any, async (req: AuthRequest, res: Re
       }
     `;
 
+    // 3. Prepare Context Window (Last 10 messages)
+    // We add the NEW query temporarily to the prompt context
+    const contextMessages = session.messages.slice(-10).map(m => ({
+        role: m.role === 'assistant' ? 'assistant' : 'user', // Ensure strict mapping
+        content: m.content
+    }));
+
+    const apiUrl = process.env.LLM_API_URL || 'http://localhost:11434/v1/chat/completions';
+    const model = process.env.LLM_MODEL || 'qwen2.5-coder:3b';
+
+    // 4. Call LLM
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -82,6 +145,7 @@ router.post('/query', authenticateToken as any, async (req: AuthRequest, res: Re
         model: model,
         messages: [
           { role: 'system', content: systemPrompt },
+          ...contextMessages,
           { role: 'user', content: query }
         ],
         stream: false,
@@ -96,74 +160,80 @@ router.post('/query', authenticateToken as any, async (req: AuthRequest, res: Re
     let content = data.choices?.[0]?.message?.content || "{}";
     content = content.replace(/```json|```/g, '').trim();
     
-    console.log('🤖 LLM Raw Output:', content);
-
     let result;
     try {
-        result = JSON.parse(content);
+        // Find the first valid JSON object in the string
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            result = JSON.parse(jsonMatch[0]);
+        } else {
+            throw new Error('No JSON found');
+        }
     } catch (e) {
-        return res.json({ message: "I understood that, but I'm having trouble formatting the action." });
+        console.warn('⚠️ LLM returned non-JSON. Falling back to text.', content);
+        result = { 
+            intent: 'query', 
+            message: content // Use the raw text as the answer
+        };
     }
 
-    // --- ACTION HANDLERS ---
-
+    // 5. Execute Actions & Formulate Final Response
+    let finalMessage = result.message || "Done.";
+    
     if (result.intent === 'create') {
         const newEmp = {
             ...result.data,
-            createdBy: req.user?.username,
+            createdBy: username,
             createdAt: new Date(),
             updatedAt: new Date()
         };
         await db.collection('employees').insertOne(newEmp);
-        
-        // Cache Invalidation
         await deletePattern('employees_list:*');
         broadcastUpdate('CREATE');
-        
-        return res.json({ message: `✅ Successfully created employee: ${newEmp.name}` });
+        finalMessage = `✅ Successfully created employee: ${newEmp.name}`;
+    } else if (result.intent === 'update') {
+        if (result.target_id) {
+            await db.collection('employees').updateOne(
+                { _id: new ObjectId(result.target_id) },
+                { $set: { ...result.update_fields, updatedAt: new Date() } }
+            );
+            await deleteCache(`employee:${result.target_id}`);
+            await deletePattern('employees_list:*');
+            broadcastUpdate('UPDATE');
+            finalMessage = `✅ Updated details for employee ID ${result.target_id}.`;
+        }
+    } else if (result.intent === 'delete') {
+        if (result.target_id) {
+            await db.collection('employees').deleteOne({ _id: new ObjectId(result.target_id) });
+            await deleteCache(`employee:${result.target_id}`);
+            await deletePattern('employees_list:*');
+            broadcastUpdate('DELETE');
+            finalMessage = `🗑️ Deleted employee ID ${result.target_id}`;
+        }
     }
 
-    if (result.intent === 'update') {
-        if (!result.target_id) return res.json({ message: "I couldn't find exactly which employee to update." });
-        
-        // Security Check
-        const target = employees.find(e => e._id.toString() === result.target_id);
-        if (!target) return res.json({ message: "Employee not found or access denied." });
+    // 6. Save to DB (Persistence)
+    const newMessages: ChatMessage[] = [
+        { role: 'user', content: query, timestamp: new Date() },
+        { role: 'assistant', content: finalMessage, timestamp: new Date() }
+    ];
 
-        await db.collection('employees').updateOne(
-            { _id: new ObjectId(result.target_id) },
-            { $set: { ...result.update_fields, updatedAt: new Date() } }
-        );
+    await db.collection('chat_sessions').updateOne(
+        { userId: username },
+        { 
+            $push: { messages: { $each: newMessages } },
+            $set: { updatedAt: new Date() }
+        }
+    );
 
-        await deleteCache(`employee:${result.target_id}`);
-        await deletePattern('employees_list:*');
-        broadcastUpdate('UPDATE');
-
-        return res.json({ message: `✅ Updated details for ${target.name}.` });
-    }
-
-    if (result.intent === 'delete') {
-        if (!result.target_id) return res.json({ message: "I couldn't identify who to delete." });
-
-        const target = employees.find(e => e._id.toString() === result.target_id);
-        if (!target) return res.json({ message: "Employee not found or access denied." });
-
-        await db.collection('employees').deleteOne({ _id: new ObjectId(result.target_id) });
-
-        await deleteCache(`employee:${result.target_id}`);
-        await deletePattern('employees_list:*');
-        broadcastUpdate('DELETE');
-
-        return res.json({ message: `🗑️ Deleted employee: ${target.name}` });
-    }
-
-    // Default: Query
+    // 7. Response
+    // For queries, we filter results based on IDs provided by LLM
     const matchingIds = Array.isArray(result.matching_ids) ? result.matching_ids : [];
     const filtered = employees.filter(emp => matchingIds.includes(emp._id.toString()));
-    
+
     res.json({ 
         results: filtered, 
-        message: result.message || "Here is the data." 
+        message: finalMessage 
     });
 
   } catch (error: any) {

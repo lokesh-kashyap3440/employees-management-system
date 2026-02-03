@@ -16,8 +16,8 @@ export const ChatBot: React.FC = () => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: '1',
-      text: "Hello! I'm your Employee Assistant. Ask me anything about the team, like 'Who earns more than 60000?' or 'Who is in Engineering?'",
+      id: 'welcome',
+      text: "Hello! I'm your Employee Assistant. Ask me anything about the team.",
       sender: 'bot',
     },
   ]);
@@ -25,12 +25,28 @@ export const ChatBot: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Load history on mount
+  useEffect(() => {
+    if (isOpen) {
+        chatbotApi.getHistory().then(data => {
+            if (data.messages && data.messages.length > 0) {
+                // Merge history, keeping the welcome message if history is empty or just prepending
+                setMessages(prev => {
+                    const historyIds = new Set(data.messages.map(m => m.id));
+                    // Filter out any duplicates if welcome message somehow got saved (unlikely with this ID)
+                    return [...prev.filter(m => !historyIds.has(m.id)), ...data.messages];
+                });
+            }
+        }).catch(err => console.error("Failed to load history", err));
+    }
+  }, [isOpen]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();

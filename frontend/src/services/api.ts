@@ -98,4 +98,8 @@ export const chatbotApi = {
     const response = await apiClient.post<{ results: any[]; message: string }>('/chatbot/query', { query });
     return response.data;
   },
+  getHistory: async (): Promise<{ messages: any[] }> => {
+    const response = await apiClient.get<{ messages: any[] }>('/chatbot/history');
+    return response.data;
+  }
 };

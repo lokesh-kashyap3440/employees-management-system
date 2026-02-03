@@ -31,15 +31,25 @@ To test locally on an Android emulator:
 ### 3. Production Render Setup (Android)
 To use the Android app with your live **Render** deployment:
 1.  **Find your Render URL**: Get your backend URL from the Render Dashboard (e.g., `https://your-app.onrender.com`).
-2.  **Update Config**: In `frontend/src/services/api.ts`, the app is configured to automatically use the production URL when not on `localhost`.
+2.  **Update Config**: In `frontend/src/services/api.ts`, update `PROD_BACKEND_URL` with your Render URL.
 3.  **Build for Production**:
     ```bash
     cd frontend
-    # Ensure .env is empty or points to Render
+    # Ensure .env VITE_API_URL is commented out or empty to force production URL
     npm run build
     npx cap sync android
     ```
 4.  **Generate APK**: In Android Studio, go to **Build > Build APK(s)**.
+
+### 4. Native Google Login Configuration
+For Google Sign-In to work on Android, you must:
+1.  **Google Cloud Console**: Create an **Android Client ID**.
+    *   Package Name: `com.ems.app`
+    *   SHA-1 Fingerprint: Run `./gradlew signingReport` in `frontend/android` to get this.
+2.  **Capacitor Config**: Update `frontend/capacitor.config.ts`:
+    *   Set `serverClientId` to your **Web Client ID** (not the Android one).
+3.  **Strings Resource**: Update `frontend/android/app/src/main/res/values/strings.xml`:
+    *   Set `server_client_id` to your **Web Client ID**.
 
 ---
 
@@ -56,35 +66,6 @@ To use the Android app with your live **Render** deployment:
 - **Real-Time Sync**: Socket.io keeps all devices updated instantly.
 - **Redis Caching**: High-performance data retrieval.
 - **AI Chatbot**: Query your employee database using natural language.
-- **Advanced UI**: Real-time fuzzy search and read-only detailed view for employee records.
-
-## 🤖 AI Chatbot Integration
-
-The system features a smart assistant powered by Large Language Models (LLMs) that allows users to query employee data using natural language.
-
-### Features
-- **Natural Language Understanding**: Ask "Who earns more than $80k?" or "Show me all engineers" and get instant, filtered results.
-- **Context-Aware**: The bot is aware of the current user's role and data access permissions (RBAC).
-- **JSON-Based Reasoning**: The backend forces the LLM to output structured JSON, ensuring the UI can render rich employee cards instead of just text.
-
-### Configuration
-The chatbot uses a provider-agnostic adapter (`backend/src/routes/chatbot.ts`).
-
-**Environment Variables (`backend/.env`):**
-```env
-# Provider: 'openai', 'anthropic', 'groq', or 'ollama' (for local)
-LLM_PROVIDER=openai
-
-# API Key (Not needed for Ollama)
-LLM_API_KEY=sk-...
-
-# Model Name
-LLM_MODEL=gpt-4o-mini
-# For local: qwen2.5-coder:3b
-
-# API URL (Optional, defaults to provider standard)
-LLM_API_URL=https://api.openai.com/v1/chat/completions
-```
 
 ---
 
@@ -129,30 +110,6 @@ Both Frontend and Backend maintain **>90% code coverage**.
 ```bash
 # Run tests with coverage
 npm run test:coverage # (in either directory)
-```
-
----
-
-## 🛠 Web vs. Mobile Logic (Safe Coexistence)
-
-The application is built to detect its environment automatically:
-- **API Routing**: Automatically switches between `localhost` (Web dev), `10.0.2.2` (Android Emulator), and `Render` (Production).
-- **Google Login**: Uses the standard `@react-oauth/google` for Web and the native `@codetrix-studio/capacitor-google-auth` for Android/iOS to ensure maximum reliability.
-- **CORS**: The backend is configured to trust both standard browsers and the `capacitor://localhost` origin used by mobile apps.
-
----
-
-## 🔧 Troubleshooting & Known Patches
-
-### Gradle build failures (Google Auth Plugin)
-Newer versions of Android Studio/Gradle may fail on the `@codetrix-studio/capacitor-google-auth` plugin due to deprecated methods. If you see errors regarding `jcenter()` or `proguard-android.txt`, run these PowerShell commands to patch the plugin:
-
-```powershell
-# Fix jcenter() error
-(Get-Content "frontend/node_modules/@codetrix-studio/capacitor-google-auth/android/build.gradle") -replace 'jcenter\(\)', 'mavenCentral()' | Set-Content "frontend/node_modules/@codetrix-studio/capacitor-google-auth/android/build.gradle"
-
-# Fix proguard-android.txt error
-(Get-Content "frontend/node_modules/@codetrix-studio/capacitor-google-auth/android/build.gradle") -replace 'proguard-android\.txt', 'proguard-android-optimize.txt' | Set-Content "frontend/node_modules/@codetrix-studio/capacitor-google-auth/android/build.gradle"
 ```
 
 ---
